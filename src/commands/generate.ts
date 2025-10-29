@@ -55,7 +55,12 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
     // 模型选择
     const models = (cfg.modelList && cfg.modelList.length > 0) ? cfg.modelList : [cfg.modelDefault];
     const lastModel = context.globalState.get<string>(LAST_MODEL_KEY) || cfg.modelDefault;
-    const picked = await vscode.window.showQuickPick(models, {
+    // 若上次选择的模型在当前可用模型中，则将其放到最前
+    const modelsForPick = models.includes(lastModel)
+      ? [lastModel, ...models.filter((m) => m !== lastModel)]
+      : models;
+
+    const picked = await vscode.window.showQuickPick(modelsForPick, {
       title: '选择模型',
       placeHolder: '选择用于生成的模型',
       canPickMany: false,
@@ -69,7 +74,7 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
       isWholeLine: true,
       overviewRulerColor: new vscode.ThemeColor('editorWarning.foreground'),
       after: {
-        contentText: ' ⏳ 正在生成...',
+        contentText: ' 正在生成...',
         color: new vscode.ThemeColor('editorCodeLens.foreground'),
         margin: '0 0 0 8px',
       },
@@ -87,6 +92,21 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
     } catch {
       // ignore
     }
+
+    // 跟踪未完成的 loading 装饰，便于在流式模式下按任务完成逐个清除
+    const keyForRange = (r: vscode.Range) => `${r.start.line}:${r.start.character}-${r.end.line}:${r.end.character}`;
+    const pendingLoadingDecos = new Map<string, vscode.DecorationOptions>();
+    for (const e of decoEntries) {
+      pendingLoadingDecos.set(keyForRange(e.range), e.options);
+    }
+    const clearLoadingDecorationFor = (r: vscode.Range) => {
+      try {
+        pendingLoadingDecos.delete(keyForRange(r));
+        editor.setDecorations(loadingDecoration, Array.from(pendingLoadingDecos.values()));
+      } catch {
+        // ignore
+      }
+    };
 
     // 全局取消
     const globalAbort = new AbortController();
@@ -199,14 +219,15 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
               showFriendlyError(err);
             }
           } finally {
-            // 移除每个任务的“生成中”装饰（通过整体重设实现）
+            // 流式模式：该选区任务结束（成功/失败/取消）即移除对应的 loading 装饰
             try {
-              // 重置时略过该 range
-              // 简化：所有任务结束后统一移除（见 finally 外层）
+              if (useStreaming) {
+                clearLoadingDecorationFor(range);
+              }
             } catch {
               // ignore
             }
-            globalAbort.signal.removeEventListener('abort', () => taskController.abort());
+            globalAbort.signal.removeEventListener('abort', onGlobalAbort);
           }
         });
 
