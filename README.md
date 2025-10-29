@@ -55,7 +55,7 @@ npm i
   - multiCursorAI.httpMaxConnections: 连接池连接数（建议与并发对齐）
   - multiCursorAI.maxRequestsPerMinute: 每分钟上限（令牌桶）
   - multiCursorAI.dynamicLimitProbe: 动态限流探测（默认 true）
-  - multiCursorAI.maxRetries: 最大重试次数（默认 3）
+  - multiCursorAI.maxRetries: 最大重试次数（默认 8）
   - multiCursorAI.baseBackoffMs: 退避基础毫秒（默认 500）
   - multiCursorAI.maxBackoffMs: 退避最大毫秒（默认 60000）
 

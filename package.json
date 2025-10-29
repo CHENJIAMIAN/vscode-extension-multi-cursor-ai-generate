@@ -194,7 +194,7 @@
         },
         "multiCursorAI.maxRetries": {
           "type": "number",
-          "default": 3,
+          "default": 8,
           "minimum": 0,
           "description": "失败后的最大重试次数（含退避）。"
         },

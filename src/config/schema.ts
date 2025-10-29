@@ -82,7 +82,7 @@ export const defaultConfig: ConfigSchema = {
   httpMaxConnections: 30,
   maxRequestsPerMinute: 60,
   dynamicLimitProbe: true,
-  maxRetries: 3,
+  maxRetries: 8,
   baseBackoffMs: 500,
   maxBackoffMs: 60000,
 
