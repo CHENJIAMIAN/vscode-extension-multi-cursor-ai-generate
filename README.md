@@ -38,7 +38,7 @@ npm i
   - multiCursorAI.authScheme: 鉴权方案（默认 "Bearer"）
   - multiCursorAI.modelsPath: 模型列表路径（默认 "/v1/models"）
   - multiCursorAI.requestPath: 请求路径（默认 "/v1/chat/completions"）
-  - multiCursorAI.useStreaming: 启用 SSE 流式（默认 false）
+  - multiCursorAI.useStreaming: 启用 SSE 流式（默认 true）
   - multiCursorAI.timeoutMs: HTTP 超时，默认 60000
   - multiCursorAI.proxy: 代理地址（如 http://127.0.0.1:7890）
   - multiCursorAI.rejectUnauthorized: TLS 校验（默认 true）

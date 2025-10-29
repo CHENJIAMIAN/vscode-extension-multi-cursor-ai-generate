@@ -59,7 +59,6 @@
       "commandPalette": [
         {
           "command": "multiCursorAI.generate",
-          "when": "editorTextFocus",
           "group": "navigation@10"
         },
         {
@@ -129,7 +128,7 @@
         },
         "multiCursorAI.useStreaming": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "是否使用 SSE 流式模式（端点需要支持 text/event-stream）。"
         },
         "multiCursorAI.timeoutMs": {
