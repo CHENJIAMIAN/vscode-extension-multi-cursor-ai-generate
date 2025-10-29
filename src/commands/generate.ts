@@ -16,6 +16,7 @@ interface GenerateCommandDeps {
 }
 
 const LAST_MODEL_KEY = 'multiCursorAI.lastModel';
+const PROMPT_HISTORY_KEY = 'multiCursorAI.promptHistory';
 
 export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Disposable {
   const cmd = vscode.commands.registerCommand('multiCursorAI.generate', async () => {
@@ -42,15 +43,41 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
 
     const cfg = getEffectiveConfig();
 
-    // 提示词
-    const userPrompt = await vscode.window.showInputBox({
-      prompt: '输入你的提示词（将对每个选区独立生成）',
-      placeHolder: '例如：将所选代码重构为异步函数并添加错误处理',
+    // 提示词（支持历史选择或新增，最多记住 100 条）
+    const history = (context.globalState.get<string[]>(PROMPT_HISTORY_KEY) ?? [])
+      .filter((s) => typeof s === 'string' && s.trim().length > 0);
+    const NEW_PROMPT_LABEL = '$(pencil) 输入新的提示词...';
+    const quickPickItems = history.length > 0 ? [...history, NEW_PROMPT_LABEL] : [NEW_PROMPT_LABEL];
+    const pickedPromptOrNew = await vscode.window.showQuickPick(quickPickItems, {
+      title: '选择或输入提示词',
+      placeHolder: '选择历史提示词，或选择“输入新的提示词...”以新增',
+      canPickMany: false,
       ignoreFocusOut: true,
     });
-    if (userPrompt === undefined) {
+    if (pickedPromptOrNew === undefined) {
       return;
     }
+    let userPrompt: string | undefined;
+    if (pickedPromptOrNew === NEW_PROMPT_LABEL) {
+      const input = await vscode.window.showInputBox({
+        prompt: '输入你的提示词（将对每个选区独立生成）',
+        placeHolder: '例如：将所选代码重构为异步函数并添加错误处理',
+        ignoreFocusOut: true,
+      });
+      if (input === undefined) {
+        return;
+      }
+      userPrompt = input.trim();
+    } else {
+      userPrompt = pickedPromptOrNew.trim();
+    }
+    if (!userPrompt) {
+      vscode.window.showInformationMessage('提示词不能为空。');
+      return;
+    }
+    // 更新历史：将本次提示词移到最前，去重并限制为最新 100 条
+    const newHistory = [userPrompt, ...history.filter((s) => s !== userPrompt)].slice(0, cfg.promptHistoryLimit);
+    await context.globalState.update(PROMPT_HISTORY_KEY, newHistory);
 
     // 模型选择
     const models = (cfg.modelList && cfg.modelList.length > 0) ? cfg.modelList : [cfg.modelDefault];

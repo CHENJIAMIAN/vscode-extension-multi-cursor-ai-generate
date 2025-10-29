@@ -56,6 +56,9 @@ export interface ConfigSchema {
   globalPrependInstruction: string;
   contextVars: ContextVarsConfig;
 
+  // 历史/UI
+  promptHistoryLimit: number;
+
   // 日志
   logLevel: LogLevel;
 }
@@ -102,6 +105,9 @@ export const defaultConfig: ConfigSchema = {
     includeNow: true,
   },
 
+  // 历史/UI
+  promptHistoryLimit: 100,
+
   logLevel: 'info',
 };
 
@@ -133,6 +139,8 @@ export function mergeConfig(partial: Partial<ConfigSchema>): ConfigSchema {
   cfg.temperature = clampNum(cfg.temperature, 0, 2, defaultConfig.temperature);
   cfg.maxTokens = clampInt(cfg.maxTokens, 1, 128000, defaultConfig.maxTokens);
   cfg.timeoutMs = clampInt(cfg.timeoutMs, 1000, 10 * 60 * 1000, defaultConfig.timeoutMs);
+  // 历史上限：1~1000
+  cfg.promptHistoryLimit = clampInt(cfg.promptHistoryLimit, 1, 1000, defaultConfig.promptHistoryLimit);
 
   // 规范化 URL 路径
   cfg.modelsPath = ensureLeadingSlash(cfg.modelsPath);

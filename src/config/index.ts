@@ -53,6 +53,9 @@ export function getEffectiveConfig(): ConfigSchema {
       includeNow: s.get<boolean>('contextVars.includeNow'),
     },
 
+    // 历史/UI
+    promptHistoryLimit: s.get<number>('promptHistoryLimit'),
+
     // 日志
     logLevel: s.get<'error' | 'warn' | 'info' | 'debug' | 'trace'>('logLevel'),
   };
