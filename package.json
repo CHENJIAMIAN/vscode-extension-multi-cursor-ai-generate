@@ -4,7 +4,7 @@
   "description": "对多光标/多选区并发调用 OpenAI 风格端点生成文本，支持限流、重试、流式插入、状态栏与日志。",
   "publisher": "CHENJIAMIAN",
   "author": "CHENJIAMIAN",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "engines": {
     "vscode": "^1.92.0"
   },
