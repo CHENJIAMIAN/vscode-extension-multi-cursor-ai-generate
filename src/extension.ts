@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
-import { createOutputChannelLogger, Logger } from './log/logger';
-import { mergeConfig, type ConfigSchema } from './config/schema';
+import { createOutputChannelLogger } from './log/logger';
+import type { Logger } from './log/logger';
+import type { ConfigSchema } from './config/schema';
 import { getEffectiveConfig, getSecret, setSecret, onDidChangeConfigurationSection } from './config/index';
 import { TokenBucketPool } from './net/rateLimiter';
 import type { RateLimiterMetrics, ServerRateLimitHint } from './net/rateLimiter';
@@ -8,6 +9,7 @@ import { HttpClient } from './net/httpClient';
 import { StatusBarController } from './ui/status';
 import { registerGenerateCommand } from './commands/generate';
 import { registerSyncModelsCommand } from './commands/syncModels';
+import { registerApiKeyCommands } from './commands/apiKey';
 
 // 全局单例容器
 let logger: Logger;
@@ -85,6 +87,11 @@ export async function activate(context: vscode.ExtensionContext) {
       statusBar,
     }),
     registerSyncModelsCommand({
+      context,
+      logger,
+      httpClient,
+    }),
+    registerApiKeyCommands({
       context,
       logger,
       httpClient,

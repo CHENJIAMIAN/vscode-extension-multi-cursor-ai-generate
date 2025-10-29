@@ -13,7 +13,9 @@
   ],
   "activationEvents": [
     "onCommand:multiCursorAI.generate",
-    "onCommand:multiCursorAI.syncModels"
+    "onCommand:multiCursorAI.syncModels",
+    "onCommand:multiCursorAI.setApiKey",
+    "onCommand:multiCursorAI.clearApiKey"
   ],
   "contributes": {
     "commands": [
@@ -25,6 +27,16 @@
       {
         "command": "multiCursorAI.syncModels",
         "title": "Multi Cursor AI: Sync Models",
+        "category": "Multi Cursor AI"
+      },
+      {
+        "command": "multiCursorAI.setApiKey",
+        "title": "Multi Cursor AI: Set API Key",
+        "category": "Multi Cursor AI"
+      },
+      {
+        "command": "multiCursorAI.clearApiKey",
+        "title": "Multi Cursor AI: Clear API Key",
         "category": "Multi Cursor AI"
       }
     ],
@@ -53,6 +65,14 @@
         {
           "command": "multiCursorAI.syncModels",
           "group": "navigation@11"
+        },
+        {
+          "command": "multiCursorAI.setApiKey",
+          "group": "navigation@90"
+        },
+        {
+          "command": "multiCursorAI.clearApiKey",
+          "group": "navigation@91"
         }
       ]
     },

@@ -19,7 +19,7 @@ const LAST_MODEL_KEY = 'multiCursorAI.lastModel';
 
 export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Disposable {
   const cmd = vscode.commands.registerCommand('multiCursorAI.generate', async () => {
-    const { logger, httpClient, rateLimiter, context } = deps;
+    const { httpClient, rateLimiter, context } = deps;
 
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
@@ -93,12 +93,12 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
 
     const startTs = Date.now();
     try {
-      const result = await withCancellableProgress('AI 生成中', ranges.length, async (progressCtrl) => {
+      await withCancellableProgress('AI 生成中', ranges.length, async (progressCtrl) => {
         const nonStreamingResults: InsertionResult[] = [];
         const useStreaming = cfg.useStreaming === true;
 
         // 任务并发提交
-        const taskPromises = ranges.map(async (range, idx) => {
+        const taskPromises = ranges.map(async (range, _idx) => {
           const taskController = new AbortController();
           // 透传全局取消
           const onGlobalAbort = () => taskController.abort();
@@ -159,7 +159,7 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
               } satisfies SelectionTaskSpec);
 
               await inserter.start(range);
-              const genRes = await deps.rateLimiter.schedule(() =>
+              await deps.rateLimiter.schedule(() =>
                 httpClient.generate({
                   ...baseReq,
                   onDelta: async (delta) => {
@@ -210,18 +210,6 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
           }
         });
 
-        // 监听取消 -> 终止在途与排队
-        const cancelWatcher = (token: vscode.CancellationToken) => {
-          if (token.isCancellationRequested) {
-            try {
-              rateLimiter.cancelAll();
-              globalAbort.abort();
-            } catch {
-              // ignore
-            }
-          }
-        };
-
         // 通过 withProgress 无法直接拿 token，这里依赖 ctrl 的 isCanceled 轮询即可
         // 额外设置一个间歇检查器
         const cancelInterval = setInterval(() => {
@@ -250,7 +238,7 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
       });
 
       const elapsed = Date.now() - startTs;
-      logger.info(`生成完成，用时 ${Math.round(elapsed)}ms`);
+      deps.logger.info(`生成完成，用时 ${Math.round(elapsed)}ms`);
     } finally {
       try {
         // 移除装饰
@@ -306,6 +294,8 @@ function showFriendlyError(err: any) {
 }
 
 function truncate(s: string, max = 200): string {
-  if (!s) return '';
+  if (!s) {
+    return '';
+  }
   return s.length > max ? s.slice(0, max) + '…' : s;
 }
