@@ -78,8 +78,8 @@ export const defaultConfig: ConfigSchema = {
   maxTokens: 1024,
   requestBodyMode: 'auto',
 
-  maxConcurrency: 3,
-  httpMaxConnections: 3,
+  maxConcurrency: 30,
+  httpMaxConnections: 30,
   maxRequestsPerMinute: 60,
   dynamicLimitProbe: true,
   maxRetries: 3,

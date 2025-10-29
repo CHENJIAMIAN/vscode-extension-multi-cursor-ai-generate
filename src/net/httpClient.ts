@@ -331,19 +331,42 @@ export class HttpClient {
   }
 
   private applyRateLimitHint(res: Response) {
-    const hint: ServerRateLimitHint = {};
-    const retryAfterMs = parseRetryAfterMs(res);
-    if (retryAfterMs !== undefined) {
-      hint.retryAfterMs = retryAfterMs;
-    }
-    const perMin = parseLimitPerMinute(res);
-    if (perMin !== undefined) {
-      hint.limitPerMinuteHint = perMin;
-    }
-    if (hint.retryAfterMs !== undefined || hint.limitPerMinuteHint !== undefined) {
-      this.opts.onRateLimitHint?.(hint);
-    }
+  const hint: ServerRateLimitHint = {};
+  const retryAfterMs = parseRetryAfterMs(res);
+  if (retryAfterMs !== undefined) {
+    hint.retryAfterMs = retryAfterMs;
   }
+  const perMin = parseLimitPerMinute(res);
+  if (perMin !== undefined) {
+    hint.limitPerMinuteHint = perMin;
+  }
+
+  this.log('trace', '已完成服务端速率限制提示头检查', {
+    hasRetryAfter: retryAfterMs !== undefined,
+    hasLimitPerMinute: perMin !== undefined,
+    statusCode: res.status,
+    url: res.url,
+  });
+
+  // 有提示时：记录详情并通知回调
+  if (hint.retryAfterMs !== undefined || hint.limitPerMinuteHint !== undefined) {
+    this.log('debug', '检测到服务端速率限制提示', {
+      retryAfterMs: hint.retryAfterMs,
+      limitPerMinuteHint: hint.limitPerMinuteHint,
+      headers: {
+        'retry-after': res.headers.get('retry-after'),
+        'x-ratelimit-limit-requests': res.headers.get('x-ratelimit-limit-requests'),
+        'x-ratelimit-limit-tokens': res.headers.get('x-ratelimit-limit-tokens'),
+        'x-ratelimit-remaining-requests': res.headers.get('x-ratelimit-remaining-requests'),
+        'x-ratelimit-minute': res.headers.get('x-ratelimit-minute'),
+        'x-requests-per-minute': res.headers.get('x-requests-per-minute'),
+        'ratelimit-limit': res.headers.get('ratelimit-limit'),
+      },
+    });
+    this.opts.onRateLimitHint?.(hint);
+  }
+}
+
 
   private log(level: LogLevel, msg: string, details?: unknown) {
     try {

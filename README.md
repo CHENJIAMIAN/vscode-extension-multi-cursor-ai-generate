@@ -51,7 +51,7 @@ npm i
   - multiCursorAI.requestBodyMode: "auto" | "chat" | "completions"
 
 - 流控/重试
-  - multiCursorAI.maxConcurrency: 最大并发（默认 3）
+  - multiCursorAI.maxConcurrency: 最大并发（默认 30）
   - multiCursorAI.httpMaxConnections: 连接池连接数（建议与并发对齐）
   - multiCursorAI.maxRequestsPerMinute: 每分钟上限（令牌桶）
   - multiCursorAI.dynamicLimitProbe: 动态限流探测（默认 true）

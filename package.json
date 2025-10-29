@@ -171,13 +171,13 @@
         },
         "multiCursorAI.maxConcurrency": {
           "type": "number",
-          "default": 3,
+          "default": 30,
           "minimum": 1,
           "description": "最大并发请求数。"
         },
         "multiCursorAI.httpMaxConnections": {
           "type": "number",
-          "default": 3,
+          "default": 30,
           "minimum": 1,
           "description": "HTTP 连接池最大连接数（建议与最大并发对齐）。"
         },
