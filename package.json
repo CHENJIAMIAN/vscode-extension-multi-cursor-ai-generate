@@ -2,7 +2,8 @@
   "name": "multi-cursor-ai-generate",
   "displayName": "Multi Cursor AI Generate",
   "description": "对多光标/多选区并发调用 OpenAI 风格端点生成文本，支持限流、重试、流式插入、状态栏与日志。",
-  "publisher": "your-publisher",
+  "publisher": "CHENJIAMIAN",
+  "author": "CHENJIAMIAN",
   "version": "0.1.0",
   "engines": {
     "vscode": "^1.92.0"
@@ -11,6 +12,27 @@
   "categories": [
     "Other"
   ],
+  "icon": "images/icon.png",
+  "keywords": [
+    "ai",
+    "openai",
+    "multi-cursor",
+    "multi select",
+    "generate",
+    "chatgpt",
+    "sse",
+    "rate limit",
+    "undici"
+  ],
+  "homepage": "https://github.com/CHENJIAMIAN/vscode-extension-multi-cursor-ai-generate#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CHENJIAMIAN/vscode-extension-multi-cursor-ai-generate"
+  },
+  "bugs": {
+    "url": "https://github.com/CHENJIAMIAN/vscode-extension-multi-cursor-ai-generate/issues"
+  },
+  "license": "MIT",
   "activationEvents": [
     "onCommand:multiCursorAI.generate",
     "onCommand:multiCursorAI.syncModels",

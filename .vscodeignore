@@ -18,6 +18,7 @@ node_modules/**
 
 # Keep only compiled output
 !dist/**
+!images/**
 !README.md
 !CHANGELOG.md
 !LICENSE
