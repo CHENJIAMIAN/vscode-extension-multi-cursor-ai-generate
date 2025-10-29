@@ -33,7 +33,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // 状态栏
   statusBar = new StatusBarController(() => {
-    vscode.commands.executeCommand('workbench.action.openSettings', '@ext:your-publisher.multi-cursor-ai-generate');
+    vscode.commands.executeCommand('workbench.action.openSettings', '@ext:CHENJIAMIAN.multi-cursor-ai-generate');
   });
   statusBar.update({
     concurrency: 0,
