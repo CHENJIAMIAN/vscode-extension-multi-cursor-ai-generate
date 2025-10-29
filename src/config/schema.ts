@@ -87,7 +87,7 @@ export const defaultConfig: ConfigSchema = {
   maxBackoffMs: 60000,
 
   insertMode: 'append',
-  preSeparator: '',
+  preSeparator: ' ',
   postSeparator: '',
   trimResult: true,
 

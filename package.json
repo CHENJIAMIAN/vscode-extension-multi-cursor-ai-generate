@@ -221,7 +221,7 @@
         },
         "multiCursorAI.preSeparator": {
           "type": "string",
-          "default": "",
+          "default": " ",
           "description": "插入内容前的分隔符。"
         },
         "multiCursorAI.postSeparator": {
