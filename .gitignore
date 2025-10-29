@@ -1,0 +1,36 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build
+dist/
+out/
+*.map
+
+# VS Code Extension packaging
+*.vsix
+
+# Tests
+.vscode-test/
+coverage/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env/Secrets
+.env
+.env.*
+*.secret
+*.key
+
+# Misc
+.tmp/
+.temp/
+.cache/

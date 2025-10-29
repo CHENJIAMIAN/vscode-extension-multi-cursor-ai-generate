@@ -1,0 +1,294 @@
+{
+  "name": "multi-cursor-ai-generate",
+  "displayName": "Multi Cursor AI Generate",
+  "description": "对多光标/多选区并发调用 OpenAI 风格端点生成文本，支持限流、重试、流式插入、状态栏与日志。",
+  "publisher": "your-publisher",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.92.0"
+  },
+  "main": "./dist/src/extension.js",
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:multiCursorAI.generate",
+    "onCommand:multiCursorAI.syncModels"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "multiCursorAI.generate",
+        "title": "Multi Cursor AI: Generate",
+        "category": "Multi Cursor AI"
+      },
+      {
+        "command": "multiCursorAI.syncModels",
+        "title": "Multi Cursor AI: Sync Models",
+        "category": "Multi Cursor AI"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "multiCursorAI.generate",
+        "key": "ctrl+alt+p",
+        "when": "editorTextFocus && !inputFocus",
+        "linux": "ctrl+alt+p",
+        "win": "ctrl+alt+p"
+      },
+      {
+        "command": "multiCursorAI.generate",
+        "key": "ctrl+option+p",
+        "when": "editorTextFocus && !inputFocus",
+        "mac": "ctrl+option+p"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "multiCursorAI.generate",
+          "when": "editorTextFocus",
+          "group": "navigation@10"
+        },
+        {
+          "command": "multiCursorAI.syncModels",
+          "group": "navigation@11"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Multi Cursor AI",
+      "properties": {
+        "multiCursorAI.baseUrl": {
+          "type": "string",
+          "default": "https://api.openai.com",
+          "description": "OpenAI 风格 API 的基础 URL，例如 https://api.openai.com 或自建网关。"
+        },
+        "multiCursorAI.apiKeySecretId": {
+          "type": "string",
+          "default": "multiCursorAI.apiKey",
+          "description": "SecretStorage 中保存 API Key 的标识符。"
+        },
+        "multiCursorAI.apiKeyEnvVar": {
+          "type": "string",
+          "default": "OPENAI_API_KEY",
+          "description": "从环境变量读取默认 API Key 的变量名。"
+        },
+        "multiCursorAI.authScheme": {
+          "type": "string",
+          "default": "Bearer",
+          "description": "Authorization 认证方案，通常为 Bearer。"
+        },
+        "multiCursorAI.modelDefault": {
+          "type": "string",
+          "default": "gpt-4o-mini",
+          "description": "默认使用的模型名称。"
+        },
+        "multiCursorAI.modelList": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "gpt-4o-mini",
+            "gpt-4o",
+            "gpt-4.1-mini",
+            "gpt-3.5-turbo"
+          ],
+          "description": "可选模型列表（QuickPick 中显示）。"
+        },
+        "multiCursorAI.modelsPath": {
+          "type": "string",
+          "default": "/v1/models",
+          "description": "模型同步接口路径。"
+        },
+        "multiCursorAI.requestPath": {
+          "type": "string",
+          "default": "/v1/chat/completions",
+          "description": "生成请求接口路径，优先 chat/completions，可改为 /v1/completions。"
+        },
+        "multiCursorAI.useStreaming": {
+          "type": "boolean",
+          "default": false,
+          "description": "是否使用 SSE 流式模式（端点需要支持 text/event-stream）。"
+        },
+        "multiCursorAI.timeoutMs": {
+          "type": "number",
+          "default": 60000,
+          "description": "HTTP 请求超时时间（毫秒）。"
+        },
+        "multiCursorAI.proxy": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "HTTP(S) 代理，例如 http://127.0.0.1:7890。为空表示不使用代理。"
+        },
+        "multiCursorAI.rejectUnauthorized": {
+          "type": "boolean",
+          "default": true,
+          "description": "是否拒绝不受信 TLS 证书（自签名）。设为 false 可忽略 TLS 校验（不安全）。"
+        },
+        "multiCursorAI.temperature": {
+          "type": "number",
+          "default": 0.2,
+          "minimum": 0,
+          "maximum": 2,
+          "description": "采样温度。"
+        },
+        "multiCursorAI.maxTokens": {
+          "type": "number",
+          "default": 1024,
+          "minimum": 1,
+          "description": "返回最大 token 数限制。"
+        },
+        "multiCursorAI.requestBodyMode": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "chat",
+            "completions"
+          ],
+          "default": "auto",
+          "description": "请求体映射模式：自动选择 chat/completions，或强制某种模式。"
+        },
+        "multiCursorAI.maxConcurrency": {
+          "type": "number",
+          "default": 3,
+          "minimum": 1,
+          "description": "最大并发请求数。"
+        },
+        "multiCursorAI.httpMaxConnections": {
+          "type": "number",
+          "default": 3,
+          "minimum": 1,
+          "description": "HTTP 连接池最大连接数（建议与最大并发对齐）。"
+        },
+        "multiCursorAI.maxRequestsPerMinute": {
+          "type": "number",
+          "default": 60,
+          "minimum": 1,
+          "description": "每分钟最大请求数（令牌桶速率）。"
+        },
+        "multiCursorAI.dynamicLimitProbe": {
+          "type": "boolean",
+          "default": true,
+          "description": "动态限流探测：根据速率限制响应头与429/503实时调整。"
+        },
+        "multiCursorAI.maxRetries": {
+          "type": "number",
+          "default": 3,
+          "minimum": 0,
+          "description": "失败后的最大重试次数（含退避）。"
+        },
+        "multiCursorAI.baseBackoffMs": {
+          "type": "number",
+          "default": 500,
+          "minimum": 100,
+          "description": "指数退避的基础毫秒。"
+        },
+        "multiCursorAI.maxBackoffMs": {
+          "type": "number",
+          "default": 60000,
+          "minimum": 1000,
+          "description": "指数退避的最大毫秒上限。"
+        },
+        "multiCursorAI.insertMode": {
+          "type": "string",
+          "enum": [
+            "append",
+            "replace"
+          ],
+          "default": "append",
+          "description": "插入模式：在末尾追加或替换选区。"
+        },
+        "multiCursorAI.preSeparator": {
+          "type": "string",
+          "default": "\\n\\n",
+          "description": "插入内容前的分隔符。"
+        },
+        "multiCursorAI.postSeparator": {
+          "type": "string",
+          "default": "\\n",
+          "description": "插入内容后的分隔符。"
+        },
+        "multiCursorAI.trimResult": {
+          "type": "boolean",
+          "default": true,
+          "description": "是否修剪返回文本的首尾空白。"
+        },
+        "multiCursorAI.promptTemplate": {
+          "type": "string",
+          "default": "请根据用户意图对所选文本进行处理。\\n用户意图: {userPrompt}\\n所选文本: \\n\\n{selection}",
+          "markdownDescription": "提示模板，至少包含 {userPrompt} 与 {selection} 占位符。"
+        },
+        "multiCursorAI.systemPromptEnabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "是否发送系统提示（system message）。"
+        },
+        "multiCursorAI.globalPrependInstruction": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "在最终用户提示前追加的全局指令，用于约束风格或格式。"
+        },
+        "multiCursorAI.contextVars.includeFileName": {
+          "type": "boolean",
+          "default": true,
+          "description": "上下文变量：注入文件名。"
+        },
+        "multiCursorAI.contextVars.includeLanguageId": {
+          "type": "boolean",
+          "default": true,
+          "description": "上下文变量：注入语言 ID。"
+        },
+        "multiCursorAI.contextVars.includeRelativePath": {
+          "type": "boolean",
+          "default": true,
+          "description": "上下文变量：注入相对路径。"
+        },
+        "multiCursorAI.contextVars.includeNow": {
+          "type": "boolean",
+          "default": true,
+          "description": "上下文变量：注入当前时间（ISO）。"
+        },
+        "multiCursorAI.logLevel": {
+          "type": "string",
+          "enum": [
+            "error",
+            "warn",
+            "info",
+            "debug",
+            "trace"
+          ],
+          "default": "info",
+          "description": "日志级别。"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "watch": "tsc -w -p .",
+    "lint": "eslint . --ext .ts",
+    "test": "mocha -r ts-node/register \"test/**/*.test.ts\"",
+    "package": "vsce package",
+    "publish": "vsce publish --yarn",
+    "prepublishOnly": "npm run compile"
+  },
+  "devDependencies": {
+    "@types/chai": "^5.2.3",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^18.19.59",
+    "@types/vscode": "^1.92.0",
+    "@typescript-eslint/eslint-plugin": "^7.17.0",
+    "@typescript-eslint/parser": "^7.17.0",
+    "chai": "^4.5.0",
+    "eslint": "^8.57.0",
+    "mocha": "^10.7.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.2",
+    "vsce": "^2.15.0"
+  },
+  "dependencies": {
+    "undici": "^6.19.7"
+  }
+}

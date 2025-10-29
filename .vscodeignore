@@ -1,0 +1,23 @@
+# Exclude sources and dev files from VSIX
+src/**
+test/**
+**/*.map
+.eslintrc.json
+tsconfig.json
+.vscode/**
+.github/**
+scripts/**
+.env
+.env.*
+# 不排除 README/CHANGELOG/LICENSE
+# *.md
+
+# Node/binaries
+node_modules/**
+!node_modules/.bin/
+
+# Keep only compiled output
+!dist/**
+!README.md
+!CHANGELOG.md
+!LICENSE
