@@ -221,12 +221,12 @@
         },
         "multiCursorAI.preSeparator": {
           "type": "string",
-          "default": "\\n\\n",
+          "default": "",
           "description": "插入内容前的分隔符。"
         },
         "multiCursorAI.postSeparator": {
           "type": "string",
-          "default": "\\n",
+          "default": "",
           "description": "插入内容后的分隔符。"
         },
         "multiCursorAI.trimResult": {
