@@ -157,6 +157,14 @@ npm test
 - 模板渲染：[test/template.test.ts](test/template.test.ts:1)
 
 ## 打包与发布
+- 自动发布
+
+```bash
+# 先
+npm run compile
+# 再
+npx vsce publish --skip-duplicate -p "vscode personal access token to Visual Studio Code"
+```
 
 - 打包 VSIX（需要安装 vsce）：
 
