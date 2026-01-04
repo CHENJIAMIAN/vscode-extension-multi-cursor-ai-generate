@@ -62,6 +62,9 @@ export function getEffectiveConfig(): ConfigSchema {
     // Reasoning 模型支持
     reasoningEffort: s.get<string>('reasoningEffort'),
     disableReasoning: s.get<boolean>('disableReasoning'),
+
+    // 输出约束
+    singleLineOutput: s.get<boolean>('singleLineOutput'),
   };
 
   return mergeConfig(partial as Partial<ConfigSchema>);

@@ -70,6 +70,9 @@ export interface ConfigSchema {
   reasoningEffort: ReasoningEffort;
   // 用于 zai-glm-4.6: true 禁用推理，false 启用推理 (仅发送给模型名匹配 zai-glm 的模型)
   disableReasoning: boolean;
+
+  // 输出约束
+  singleLineOutput: boolean;
 }
 
 export const defaultConfig: ConfigSchema = {
@@ -122,6 +125,8 @@ export const defaultConfig: ConfigSchema = {
   // Reasoning 模型支持
   reasoningEffort: 'none', // 默认不使用 reasoning
   disableReasoning: true, // 默认禁用 reasoning（对于 zai-glm-4.6）
+
+  singleLineOutput: false,
 };
 
 /**

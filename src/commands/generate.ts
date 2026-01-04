@@ -215,6 +215,10 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
                 httpClient.generate({
                   ...baseReq,
                   onDelta: async (delta) => {
+                    // 如果开启单行模式，实时替换换行符
+                    if (cfg.singleLineOutput) {
+                      delta = delta.replace(/\r\n|\r|\n/g, '\\n');
+                    }
                     // 逐步插入
                     await inserter.appendDelta(delta);
                   },
@@ -227,7 +231,15 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
               inserter.dispose();
 
               // 检查生成结果是否为空
-              const generatedText = (res.text ?? '').trim();
+              let generatedText = (res.text ?? '').trim();
+              if (cfg.singleLineOutput) {
+                // 虽流式已替换，但在完整性检查时保持逻辑一致 (其实 stream 下 res.text 可能也是原始的，取决于 httpClient 实现，稳妥起见不依赖 res.text 做展示，只做非空检查)
+                // 注意：httpClient.generate 返回的 text 是累积后的完整文本。
+                // 如果我们在 onDelta 里替换了，累积的 text 可能还是原始的（取决于 httpClient 是否用 onDelta 的结果去累积）。
+                // 查看 httpClient 代码通常是直接累积 raw delta。
+                // 但这里只用来判空，所以无所谓是否转义。
+              }
+
               if (!generatedText) {
                 // AI 返回空内容（可能是推理被截断等情况），需要恢复原内容
                 deps.logger.warn('AI 返回空内容，正在恢复原文', {
@@ -252,13 +264,18 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
                 taskController.signal
               );
 
+              let finalText = genRes.text ?? '';
+              if (cfg.singleLineOutput) {
+                finalText = finalText.replace(/\r\n|\r|\n/g, '\\n');
+              }
+
               nonStreamingResults.push({
                 range,
                 mode: cfg.insertMode,
                 preSeparator: cfg.preSeparator,
                 postSeparator: cfg.postSeparator,
                 trimResult: cfg.trimResult,
-                text: genRes.text ?? '',
+                text: finalText,
               });
               progressCtrl.markDone();
               return;

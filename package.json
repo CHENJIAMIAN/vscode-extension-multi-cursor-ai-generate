@@ -33,12 +33,7 @@
     "url": "https://github.com/CHENJIAMIAN/vscode-extension-multi-cursor-ai-generate/issues"
   },
   "license": "MIT",
-  "activationEvents": [
-    "onCommand:multiCursorAI.generate",
-    "onCommand:multiCursorAI.syncModels",
-    "onCommand:multiCursorAI.setApiKey",
-    "onCommand:multiCursorAI.clearApiKey"
-  ],
+  "activationEvents": [],
   "contributes": {
     "commands": [
       {
@@ -325,6 +320,11 @@
           "type": "boolean",
           "default": false,
           "markdownDescription": "是否禁用 Cerebras Reasoning（适用于 zai-glm-4.6 模型）。设为 `false` 启用推理，设为 `true` 禁用推理。"
+        },
+        "multiCursorAI.singleLineOutput": {
+          "type": "boolean",
+          "default": false,
+          "description": "是否强行将 AI 输出压缩为单行（将换行符替换为 \\n 字符）。"
         }
       }
     }
