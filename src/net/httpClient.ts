@@ -263,7 +263,11 @@ export class HttpClient {
         throw new Error('aborted');
       }
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        // 流结束，但 buffer 中可能还有未处理的最后一行（没有换行符结尾）
+        buffer += decoder.decode(undefined, { stream: false }); // 刷新解码器
+        break;
+      }
       buffer += decoder.decode(value, { stream: true });
 
       let idx: number;
@@ -296,6 +300,32 @@ export class HttpClient {
       }
       if (completed) break;
     }
+
+    // 处理 buffer 中可能残留的最后一行数据（未以换行符结尾的情况）
+    if (buffer.trim()) {
+      const line = buffer.trimEnd();
+      if (line.startsWith('data:')) {
+        const data = line.slice(5).trim();
+        if (data !== '[DONE]') {
+          try {
+            const j = JSON.parse(data);
+            const { content, reasoning } = extractDeltaFromSSE(j);
+            if (content) {
+              totalText += content;
+            }
+            if (reasoning) {
+              totalReasoning += reasoning;
+            }
+            if (content || reasoning) {
+              onDelta?.(content, reasoning || undefined);
+            }
+          } catch {
+            // 非 JSON 行忽略
+          }
+        }
+      }
+    }
+
     return { text: totalText, reasoning: totalReasoning };
   }
 
@@ -419,9 +449,11 @@ function buildOpenAIStyleBody(input: {
   const common: any = {
     model: input.model,
     temperature: input.temperature,
-    max_tokens: input.maxTokens,
     stream: !!input.stream,
   };
+  if (input.maxTokens && input.maxTokens > 0) {
+    common.max_tokens = input.maxTokens;
+  }
 
   const modelLower = input.model.toLowerCase();
 

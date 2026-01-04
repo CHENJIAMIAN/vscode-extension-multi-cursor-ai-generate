@@ -177,9 +177,9 @@
         },
         "multiCursorAI.maxTokens": {
           "type": "number",
-          "default": 1024,
-          "minimum": 1,
-          "description": "返回最大 token 数限制。"
+          "default": 0,
+          "minimum": 0,
+          "description": "返回最大 token 数限制。设为 0 表示不限制（由服务器决定）。"
         },
         "multiCursorAI.requestBodyMode": {
           "type": "string",

@@ -198,6 +198,9 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
 
             if (useStreaming) {
               // 流式插入
+              // 保存原内容，以便在 AI 返回空内容时恢复
+              const originalText = selectionText;
+
               const inserter = new StreamInserter({
                 editor,
                 range,
@@ -219,6 +222,24 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
                 , taskController.signal);
 
               await inserter.finish();
+
+              // 检查生成结果是否为空
+              const generatedText = (res.text ?? '').trim();
+              if (!generatedText) {
+                // AI 返回空内容（可能是推理被截断等情况），需要恢复原内容
+                deps.logger.warn('AI 返回空内容，正在恢复原文', {
+                  reasoningLength: res.reasoning?.length ?? 0,
+                  originalTextLength: originalText.length
+                });
+                try {
+                  // 调用 inserter 的恢复方法来正确删除已插入的分隔符并恢复原文
+                  await inserter.restoreOriginal(originalText);
+                } catch (restoreErr) {
+                  deps.logger.error('恢复原内容失败', restoreErr);
+                }
+                vscode.window.showWarningMessage('AI 返回空内容，已保留原文。可能是模型推理被截断，请重试。');
+              }
+
               progressCtrl.markDone();
               return;
             } else {

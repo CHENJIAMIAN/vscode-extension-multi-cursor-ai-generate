@@ -131,8 +131,11 @@ export class StreamInserter {
   private readonly trimResult: boolean;
 
   private anchor: vscode.Position;
+  private initialAnchor: vscode.Position; // 初始锚点位置（用于恢复）
+  private originalRange: vscode.Range | undefined; // replace 模式下的原始范围
   private inserted = false; // 是否已经插入过（用于首次插入 preSeparator）
   private disposed = false;
+  private totalInsertedLength = 0; // 跟踪已插入的总字符数
 
   constructor(spec: SelectionTaskSpec) {
     this.editor = spec.editor;
@@ -141,6 +144,7 @@ export class StreamInserter {
     this.preSeparator = spec.preSeparator ?? '';
     this.postSeparator = spec.postSeparator ?? '';
     this.trimResult = !!spec.trimResult;
+    this.originalRange = spec.range;
 
     // 计算锚点：append 用 range.end；replace 用 range.start 并清空原范围
     if (this.mode === 'replace') {
@@ -148,6 +152,7 @@ export class StreamInserter {
     } else {
       this.anchor = spec.range.end;
     }
+    this.initialAnchor = this.anchor;
   }
 
   /**
@@ -164,8 +169,9 @@ export class StreamInserter {
           undoStopBefore: false,
           undoStopAfter: false,
         });
-        // 更新锚点偏移
-        this.anchor = this.anchor.translate(0, this.preSeparator.length); // 简化：按字符位移
+        // 更新锚点偏移并跟踪插入长度
+        this.updateAnchor(this.preSeparator);
+        this.totalInsertedLength += this.preSeparator.length;
         this.inserted = true;
       }
     });
@@ -177,9 +183,25 @@ export class StreamInserter {
     const text = this.trimResult ? delta : delta; // 流式不做 trim，避免破坏格式；最终 finish 时不额外处理
     await this.enqueue(async () => {
       await this.editor.edit((eb: vscode.TextEditorEdit) => eb.insert(this.anchor, text), { undoStopBefore: false, undoStopAfter: false });
-      this.anchor = this.anchor.translate(0, text.length);
+      this.updateAnchor(text);
+      this.totalInsertedLength += text.length;
       this.inserted = true;
     });
+  }
+
+  private updateAnchor(text: string) {
+    const lines = text.split(/\r\n|\r|\n/);
+    if (lines.length === 1) {
+      this.anchor = this.anchor.translate(0, text.length);
+    } else {
+      // 多行：line 增加，char 重置为最后一行长度
+      // 注意：vscode 编辑器中插入后，下一行其实是从 0 开始计数的（如果不仅是单纯移动而是插入）
+      // 当我们在某点插入多行文本，该点之后的内容会被推到后面。
+      // 新的锚点应该位于插入文本的末尾。
+      const endLine = this.anchor.line + lines.length - 1;
+      const endChar = lines[lines.length - 1].length;
+      this.anchor = new vscode.Position(endLine, endChar);
+    }
   }
 
   public async finish(): Promise<void> {
@@ -190,13 +212,32 @@ export class StreamInserter {
           undoStopBefore: false,
           undoStopAfter: false,
         });
-        this.anchor = this.anchor.translate(0, this.postSeparator.length);
+        this.updateAnchor(this.postSeparator);
       }
     });
   }
 
   public dispose() {
     this.disposed = true;
+  }
+
+  /**
+   * 恢复原始内容：当 AI 返回空内容时，删除已插入的所有内容并恢复原始文本
+   */
+  public async restoreOriginal(originalText: string): Promise<void> {
+    await this.enqueue(async () => {
+      // 计算需要删除的范围：从初始锚点到当前锚点
+      const deleteRange = new vscode.Range(this.initialAnchor, this.anchor);
+
+      await this.editor.edit((eb: vscode.TextEditorEdit) => {
+        // 删除已插入的所有内容（包括 preSeparator 和任何流式内容）
+        if (this.totalInsertedLength > 0) {
+          eb.delete(deleteRange);
+        }
+        // 在初始锚点位置插入原始文本
+        eb.insert(this.initialAnchor, originalText);
+      }, { undoStopBefore: false, undoStopAfter: true });
+    });
   }
 
   private async enqueue(task: () => Promise<void>): Promise<void> {

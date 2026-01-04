@@ -87,7 +87,7 @@ export const defaultConfig: ConfigSchema = {
   rejectUnauthorized: true,
 
   temperature: 0.2,
-  maxTokens: 1024,
+  maxTokens: 0,
   requestBodyMode: 'auto',
 
   maxConcurrency: 30,
@@ -150,7 +150,7 @@ export function mergeConfig(partial: Partial<ConfigSchema>): ConfigSchema {
   cfg.baseBackoffMs = clampInt(cfg.baseBackoffMs, 50, 30000, defaultConfig.baseBackoffMs);
   cfg.maxBackoffMs = clampInt(cfg.maxBackoffMs, cfg.baseBackoffMs, 10 * 60 * 1000, defaultConfig.maxBackoffMs);
   cfg.temperature = clampNum(cfg.temperature, 0, 2, defaultConfig.temperature);
-  cfg.maxTokens = clampInt(cfg.maxTokens, 1, 128000, defaultConfig.maxTokens);
+  cfg.maxTokens = clampInt(cfg.maxTokens, 0, 128000, defaultConfig.maxTokens);
   cfg.timeoutMs = clampInt(cfg.timeoutMs, 1000, 10 * 60 * 1000, defaultConfig.timeoutMs);
   // 历史上限：1~1000
   cfg.promptHistoryLimit = clampInt(cfg.promptHistoryLimit, 1, 1000, defaultConfig.promptHistoryLimit);
