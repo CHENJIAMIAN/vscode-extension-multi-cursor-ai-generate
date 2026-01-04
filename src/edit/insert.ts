@@ -119,9 +119,14 @@ async function findVisibleEditorForDocument(doc: vscode.TextDocument): Promise<v
 /**
  * 流式插入器：将增量文本追加到锚点位置，维护偏移，避免与其他任务冲突。
  * - 对同一文档通过队列串行应用文本变更。
+ * - 使用全局锚点追踪器，确保多个并发任务的锚点位置能随文档变化而更新。
  */
 export class StreamInserter {
   private static queues = new Map<string, Promise<void>>();
+
+  // 全局锚点追踪器：跟踪同一文档上所有活跃的 StreamInserter
+  // 当一个 inserter 完成插入后，其他处于更后位置的 inserter 需要更新其锚点偏移
+  private static anchorTrackers = new Map<string, Set<StreamInserter>>();
 
   private readonly editor: vscode.TextEditor;
   private readonly doc: vscode.TextDocument;
@@ -136,6 +141,10 @@ export class StreamInserter {
   private inserted = false; // 是否已经插入过（用于首次插入 preSeparator）
   private disposed = false;
   private totalInsertedLength = 0; // 跟踪已插入的总字符数
+
+  // 用于标识此 inserter 的原始起始位置（用于和其他 inserter 比较）
+  private originalStartLine: number;
+  private originalStartChar: number;
 
   constructor(spec: SelectionTaskSpec) {
     this.editor = spec.editor;
@@ -153,16 +162,71 @@ export class StreamInserter {
       this.anchor = spec.range.end;
     }
     this.initialAnchor = this.anchor;
+
+    // 记录原始起始位置（用于锚点偏移调整）
+    this.originalStartLine = this.anchor.line;
+    this.originalStartChar = this.anchor.character;
+
+    // 注册到全局锚点追踪器
+    const key = this.doc.uri.toString();
+    if (!StreamInserter.anchorTrackers.has(key)) {
+      StreamInserter.anchorTrackers.set(key, new Set());
+    }
+    StreamInserter.anchorTrackers.get(key)!.add(this);
+  }
+
+  /**
+   * 当其他 inserter 插入文本后，调整此 inserter 的锚点位置
+   * @param sourceOriginalLine 触发源的原始起始行
+   * @param sourceOriginalChar 触发源的原始起始列
+   * @param insertedLines 插入的行数增量（多行时 > 0）
+   */
+  public adjustAnchorOffset(sourceOriginalLine: number, sourceOriginalChar: number, insertedLines: number): void {
+    if (this.disposed) return;
+
+    // 只有当本 inserter 逻辑上位于触发源之后时，才需要调整
+    // (即：原始位置在触发源的原始位置之后)
+    const isAfter = (this.originalStartLine > sourceOriginalLine) ||
+      (this.originalStartLine === sourceOriginalLine && this.originalStartChar > sourceOriginalChar);
+
+    if (isAfter) {
+      // 插入位置在本 inserter 之前的行，需要偏移行号
+      this.anchor = new vscode.Position(
+        this.anchor.line + insertedLines,
+        this.anchor.character
+      );
+      this.initialAnchor = new vscode.Position(
+        this.initialAnchor.line + insertedLines,
+        this.initialAnchor.character
+      );
+      // 同时也要更新 originalRange，否则后续的 replace (在 start 中执行) 会删除错误的位置
+      if (this.originalRange) {
+        this.originalRange = new vscode.Range(
+          this.originalRange.start.translate(insertedLines, 0),
+          this.originalRange.end.translate(insertedLines, 0)
+        );
+      }
+    }
   }
 
   /**
    * 启动：在 replace 模式下先清空原范围；如有 preSeparator 则先插入
    */
-  public async start(initialRange?: vscode.Range): Promise<void> {
+  public async start(): Promise<void> {
     if (this.disposed) return;
     await this.enqueue(async () => {
-      if (this.mode === 'replace' && initialRange) {
-        await this.editor.edit((eb: vscode.TextEditorEdit) => eb.delete(initialRange), { undoStopBefore: false, undoStopAfter: false });
+      // 使用最新的 originalRange（可能已被其他并发任务推移）
+      if (this.mode === 'replace' && this.originalRange) {
+        // 计算要删除的行数，用于调整其他 inserter 的锚点
+        const rangeToDelete = this.originalRange;
+        const deletedLines = rangeToDelete.end.line - rangeToDelete.start.line;
+
+        await this.editor.edit((eb: vscode.TextEditorEdit) => eb.delete(rangeToDelete), { undoStopBefore: false, undoStopAfter: false });
+
+        // 通知其他 inserter 减少锚点偏移（被删除的行数）
+        if (deletedLines > 0) {
+          this.notifyOtherInsertersForDelete(deletedLines);
+        }
       }
       if (this.preSeparator) {
         await this.editor.edit((eb: vscode.TextEditorEdit) => eb.insert(this.anchor, this.preSeparator), {
@@ -175,6 +239,49 @@ export class StreamInserter {
         this.inserted = true;
       }
     });
+  }
+
+  /**
+   * 通知其他 inserter 减少锚点偏移（用于删除操作）
+   */
+  /**
+   * 通知其他 inserter 减少锚点偏移（用于删除操作）
+   */
+  private notifyOtherInsertersForDelete(deletedLines: number): void {
+    const key = this.doc.uri.toString();
+    const trackers = StreamInserter.anchorTrackers.get(key);
+    if (!trackers) return;
+
+    for (const other of trackers) {
+      if (other !== this && !other.disposed) {
+        // 传递 sourceOriginalLine/Char 让 other 判断是否在自己之后
+        // 但注意：对于 delete，操作的是 "originalRange"，其逻辑位置即 this.originalStartLine
+        // 实际上 notifyOtherInserters 逻辑通用，只是方向相反 (deletedLines 是正数，但在 adjust 中我们需要处理负偏移? 
+        // 或者简单复用 adjustAnchorOffset 传负数？)
+        // 为了清晰，这里手动处理，逻辑应该与 adjust 类似：只有逻辑在此之后的才受影响。
+
+        const isAfter = (other.originalStartLine > this.originalStartLine) ||
+          (other.originalStartLine === this.originalStartLine && other.originalStartChar > this.originalStartChar);
+
+        if (isAfter) {
+          const shift = -deletedLines;
+          other.anchor = new vscode.Position(
+            Math.max(0, other.anchor.line + shift),
+            other.anchor.character
+          );
+          other.initialAnchor = new vscode.Position(
+            Math.max(0, other.initialAnchor.line + shift),
+            other.initialAnchor.character
+          );
+          if (other.originalRange) {
+            other.originalRange = new vscode.Range(
+              other.originalRange.start.translate(shift, 0),
+              other.originalRange.end.translate(shift, 0)
+            );
+          }
+        }
+      }
+    }
   }
 
   public async appendDelta(delta: string): Promise<void> {
@@ -191,6 +298,9 @@ export class StreamInserter {
 
   private updateAnchor(text: string) {
     const lines = text.split(/\r\n|\r|\n/);
+    const insertedAtLine = this.anchor.line;
+    const insertedLines = lines.length - 1; // 插入的新行数
+
     if (lines.length === 1) {
       this.anchor = this.anchor.translate(0, text.length);
     } else {
@@ -201,6 +311,26 @@ export class StreamInserter {
       const endLine = this.anchor.line + lines.length - 1;
       const endChar = lines[lines.length - 1].length;
       this.anchor = new vscode.Position(endLine, endChar);
+    }
+
+    // 通知其他 inserter 更新锚点偏移（仅当插入了多行时）
+    if (insertedLines > 0) {
+      this.notifyOtherInserters(insertedLines);
+    }
+  }
+
+  /**
+   * 通知同一文档上的其他 inserter 调整锚点
+   */
+  private notifyOtherInserters(insertedLines: number): void {
+    const key = this.doc.uri.toString();
+    const trackers = StreamInserter.anchorTrackers.get(key);
+    if (!trackers) return;
+
+    for (const other of trackers) {
+      if (other !== this && !other.disposed) {
+        other.adjustAnchorOffset(this.originalStartLine, this.originalStartChar, insertedLines);
+      }
     }
   }
 
@@ -219,6 +349,17 @@ export class StreamInserter {
 
   public dispose() {
     this.disposed = true;
+
+    // 从全局锚点追踪器中移除
+    const key = this.doc.uri.toString();
+    const trackers = StreamInserter.anchorTrackers.get(key);
+    if (trackers) {
+      trackers.delete(this);
+      // 如果该文档的追踪器已空，清理 Map 条目
+      if (trackers.size === 0) {
+        StreamInserter.anchorTrackers.delete(key);
+      }
+    }
   }
 
   /**

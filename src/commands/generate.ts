@@ -210,7 +210,7 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
                 trimResult: cfg.trimResult,
               } satisfies SelectionTaskSpec);
 
-              await inserter.start(range);
+              await inserter.start();
               const res = await deps.rateLimiter.schedule(() =>
                 httpClient.generate({
                   ...baseReq,
@@ -222,6 +222,9 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
                 , taskController.signal);
 
               await inserter.finish();
+
+              // 流式任务完成后，从全局追踪器中移除，释放资源
+              inserter.dispose();
 
               // 检查生成结果是否为空
               const generatedText = (res.text ?? '').trim();
