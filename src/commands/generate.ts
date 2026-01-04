@@ -192,6 +192,8 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
               maxRetries: cfg.maxRetries,
               baseBackoffMs: cfg.baseBackoffMs,
               maxBackoffMs: cfg.maxBackoffMs,
+              reasoningEffort: cfg.reasoningEffort,
+              disableReasoning: cfg.disableReasoning,
             } as const;
 
             if (useStreaming) {
@@ -206,7 +208,7 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
               } satisfies SelectionTaskSpec);
 
               await inserter.start(range);
-              await deps.rateLimiter.schedule(() =>
+              const res = await deps.rateLimiter.schedule(() =>
                 httpClient.generate({
                   ...baseReq,
                   onDelta: async (delta) => {
@@ -214,7 +216,7 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
                     await inserter.appendDelta(delta);
                   },
                 })
-              , taskController.signal);
+                , taskController.signal);
 
               await inserter.finish();
               progressCtrl.markDone();

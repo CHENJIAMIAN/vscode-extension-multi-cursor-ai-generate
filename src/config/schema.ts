@@ -8,6 +8,9 @@ export type RequestBodyMode = 'auto' | 'chat' | 'completions';
 export type InsertMode = 'append' | 'replace';
 export type LogLevel = 'error' | 'warn' | 'info' | 'debug' | 'trace';
 
+// Reasoning 相关类型 (Cerebras Reasoning 模型支持)
+export type ReasoningEffort = 'low' | 'medium' | 'high' | 'none';
+
 export interface ContextVarsConfig {
   includeFileName: boolean;
   includeLanguageId: boolean;
@@ -61,6 +64,12 @@ export interface ConfigSchema {
 
   // 日志
   logLevel: LogLevel;
+
+  // Reasoning 模型支持 (Cerebras)
+  // 用于 gpt-oss-120b: 'low' | 'medium' | 'high' | 'none' (仅发送给模型名匹配 gpt-oss/reasoning/r1 的模型)
+  reasoningEffort: ReasoningEffort;
+  // 用于 zai-glm-4.6: true 禁用推理，false 启用推理 (仅发送给模型名匹配 zai-glm 的模型)
+  disableReasoning: boolean;
 }
 
 export const defaultConfig: ConfigSchema = {
@@ -109,6 +118,10 @@ export const defaultConfig: ConfigSchema = {
   promptHistoryLimit: 100,
 
   logLevel: 'info',
+
+  // Reasoning 模型支持
+  reasoningEffort: 'none', // 默认不使用 reasoning
+  disableReasoning: true, // 默认禁用 reasoning（对于 zai-glm-4.6）
 };
 
 /**
@@ -163,6 +176,11 @@ export function mergeConfig(partial: Partial<ConfigSchema>): ConfigSchema {
   // 插入模式
   if (!['append', 'replace'].includes(cfg.insertMode)) {
     cfg.insertMode = defaultConfig.insertMode;
+  }
+
+  // Reasoning Effort 校验
+  if (!['low', 'medium', 'high', 'none'].includes(cfg.reasoningEffort)) {
+    cfg.reasoningEffort = defaultConfig.reasoningEffort;
   }
 
   return cfg;

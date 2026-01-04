@@ -17,7 +17,9 @@
       "preLaunchTask": "npm: compile",
       "skipFiles": [
         "<node_internals>/**"
-      ]
+      ],
+      "sourceMaps": true,
+      "smartStep": true
     },
     {
       "name": "Run Unit Tests (Mocha + ts-node)",

@@ -40,11 +40,15 @@ export interface GenerateParams {
   maxRetries: number;
   baseBackoffMs: number;
   maxBackoffMs: number;
-  onDelta?: (deltaText: string) => void; // SSE 增量文本
+  // Reasoning 支持
+  reasoningEffort?: string; // 'low' | 'medium' | 'high' | 'none'
+  disableReasoning?: boolean;
+  onDelta?: (deltaText: string, deltaReasoning?: string) => void; // SSE 增量文本与推理
 }
 
 export interface GenerateResult {
   text: string;
+  reasoning?: string;
   raw?: unknown;
 }
 
@@ -154,6 +158,8 @@ export class HttpClient {
       maxRetries,
       baseBackoffMs,
       maxBackoffMs,
+      reasoningEffort,
+      disableReasoning,
       onDelta,
     } = params;
 
@@ -168,6 +174,8 @@ export class HttpClient {
       temperature,
       maxTokens,
       stream,
+      reasoningEffort,
+      disableReasoning,
     });
 
     const headers = this.authHeaders();
@@ -179,6 +187,7 @@ export class HttpClient {
     while (attempt <= maxRetries) {
       attempt += 1;
       try {
+        this.log('debug', 'HTTP 请求', { url, method: 'POST', body });
         const res = await this.doFetch(url, {
           method: 'POST',
           headers,
@@ -204,16 +213,18 @@ export class HttpClient {
 
         const ctype = res.headers.get('content-type') || '';
         if (stream && ctype.includes('text/event-stream')) {
-          const text = await this.consumeSSE(res, onDelta, signal);
-          return { text };
+          const { text, reasoning } = await this.consumeSSE(res, onDelta, signal);
+          this.log('debug', '流式请求完成', { textLength: text.length, reasoningLength: reasoning.length, text, reasoning });
+          return { text, reasoning };
         } else {
           const json = await res.json().catch(async () => {
             // 某些服务端在流模式关闭或错误时仍返回文本
             const t = await safeReadText(res);
             return t;
           });
-          const text = extractTextFromOpenAIResponse(json);
-          return { text, raw: json };
+          const { text, reasoning } = extractTextFromOpenAIResponse(json);
+          this.log('debug', '非流式请求完成', { textLength: text.length, reasoningLength: (reasoning || '').length, text, reasoning });
+          return { text, reasoning, raw: json };
         }
       } catch (err: any) {
         lastErr = err;
@@ -233,17 +244,19 @@ export class HttpClient {
     throw lastErr ?? new Error('unknown error');
   }
 
-  private async consumeSSE(res: Response, onDelta?: (deltaText: string) => void, signal?: AbortSignal): Promise<string> {
+  private async consumeSSE(res: Response, onDelta?: (deltaText: string, deltaReasoning?: string) => void, signal?: AbortSignal): Promise<{ text: string; reasoning: string }> {
     const reader = (res.body as any)?.getReader?.();
     if (!reader) {
       // 不支持 WebReadableStream（Node 低版本），退化为一次性读取
       const text = await safeReadText(res);
-      return text;
+      // 尝试解析一次性文本中的 reasoning? 暂时简单返回
+      return { text, reasoning: '' };
     }
     const decoder = new TextDecoder();
     let buffer = '';
     let completed = false;
     let totalText = '';
+    let totalReasoning = '';
 
     while (true) {
       if (signal?.aborted) {
@@ -266,10 +279,15 @@ export class HttpClient {
           }
           try {
             const j = JSON.parse(data);
-            const delta = extractDeltaFromSSE(j);
-            if (delta) {
-              totalText += delta;
-              onDelta?.(delta);
+            const { content, reasoning } = extractDeltaFromSSE(j);
+            if (content) {
+              totalText += content;
+            }
+            if (reasoning) {
+              totalReasoning += reasoning;
+            }
+            if (content || reasoning) {
+              onDelta?.(content, reasoning || undefined);
             }
           } catch {
             // 非 JSON 行忽略
@@ -278,7 +296,7 @@ export class HttpClient {
       }
       if (completed) break;
     }
-    return totalText;
+    return { text: totalText, reasoning: totalReasoning };
   }
 
   private async doFetch(url: string, init: RequestInit): Promise<Response> {
@@ -331,41 +349,41 @@ export class HttpClient {
   }
 
   private applyRateLimitHint(res: Response) {
-  const hint: ServerRateLimitHint = {};
-  const retryAfterMs = parseRetryAfterMs(res);
-  if (retryAfterMs !== undefined) {
-    hint.retryAfterMs = retryAfterMs;
-  }
-  const perMin = parseLimitPerMinute(res);
-  if (perMin !== undefined) {
-    hint.limitPerMinuteHint = perMin;
-  }
+    const hint: ServerRateLimitHint = {};
+    const retryAfterMs = parseRetryAfterMs(res);
+    if (retryAfterMs !== undefined) {
+      hint.retryAfterMs = retryAfterMs;
+    }
+    const perMin = parseLimitPerMinute(res);
+    if (perMin !== undefined) {
+      hint.limitPerMinuteHint = perMin;
+    }
 
-  this.log('trace', '已完成服务端速率限制提示头检查', {
-    hasRetryAfter: retryAfterMs !== undefined,
-    hasLimitPerMinute: perMin !== undefined,
-    statusCode: res.status,
-    url: res.url,
-  });
-
-  // 有提示时：记录详情并通知回调
-  if (hint.retryAfterMs !== undefined || hint.limitPerMinuteHint !== undefined) {
-    this.log('debug', '检测到服务端速率限制提示', {
-      retryAfterMs: hint.retryAfterMs,
-      limitPerMinuteHint: hint.limitPerMinuteHint,
-      headers: {
-        'retry-after': res.headers.get('retry-after'),
-        'x-ratelimit-limit-requests': res.headers.get('x-ratelimit-limit-requests'),
-        'x-ratelimit-limit-tokens': res.headers.get('x-ratelimit-limit-tokens'),
-        'x-ratelimit-remaining-requests': res.headers.get('x-ratelimit-remaining-requests'),
-        'x-ratelimit-minute': res.headers.get('x-ratelimit-minute'),
-        'x-requests-per-minute': res.headers.get('x-requests-per-minute'),
-        'ratelimit-limit': res.headers.get('ratelimit-limit'),
-      },
+    this.log('trace', '已完成服务端速率限制提示头检查', {
+      hasRetryAfter: retryAfterMs !== undefined,
+      hasLimitPerMinute: perMin !== undefined,
+      statusCode: res.status,
+      url: res.url,
     });
-    this.opts.onRateLimitHint?.(hint);
+
+    // 有提示时：记录详情并通知回调
+    if (hint.retryAfterMs !== undefined || hint.limitPerMinuteHint !== undefined) {
+      this.log('debug', '检测到服务端速率限制提示', {
+        retryAfterMs: hint.retryAfterMs,
+        limitPerMinuteHint: hint.limitPerMinuteHint,
+        headers: {
+          'retry-after': res.headers.get('retry-after'),
+          'x-ratelimit-limit-requests': res.headers.get('x-ratelimit-limit-requests'),
+          'x-ratelimit-limit-tokens': res.headers.get('x-ratelimit-limit-tokens'),
+          'x-ratelimit-remaining-requests': res.headers.get('x-ratelimit-remaining-requests'),
+          'x-ratelimit-minute': res.headers.get('x-ratelimit-minute'),
+          'x-requests-per-minute': res.headers.get('x-requests-per-minute'),
+          'ratelimit-limit': res.headers.get('ratelimit-limit'),
+        },
+      });
+      this.opts.onRateLimitHint?.(hint);
+    }
   }
-}
 
 
   private log(level: LogLevel, msg: string, details?: unknown) {
@@ -394,7 +412,9 @@ function buildOpenAIStyleBody(input: {
   prompt?: string;
   temperature?: number;
   maxTokens?: number;
-  stream?: boolean;
+  stream: boolean;
+  reasoningEffort?: string;
+  disableReasoning?: boolean;
 }) {
   const common: any = {
     model: input.model,
@@ -402,6 +422,23 @@ function buildOpenAIStyleBody(input: {
     max_tokens: input.maxTokens,
     stream: !!input.stream,
   };
+
+  const modelLower = input.model.toLowerCase();
+
+  // 为避免 422 错误，仅针对已知支持的模型发送扩展参数
+
+  // reasoning_effort: 仅针对 gpt-oss-120b 或显式的 o1/reasoning/r1 模型
+  const isReasoningEffortSupported = /gpt-oss|reasoning|r1|^o1|deepseek-v3/i.test(modelLower);
+  if (isReasoningEffortSupported && input.reasoningEffort && input.reasoningEffort !== 'none') {
+    common.reasoning_effort = input.reasoningEffort;
+  }
+
+  // disable_reasoning: 仅针对 zai-glm 系列模型
+  const isDisableReasoningSupported = /zai-glm/i.test(modelLower);
+  if (isDisableReasoningSupported && typeof input.disableReasoning === 'boolean') {
+    common.disable_reasoning = input.disableReasoning;
+  }
+
   if (input.bodyMode === 'chat') {
     return {
       ...common,
@@ -420,40 +457,61 @@ function joinMessagesToPrompt(messages?: Array<{ role: string; content: string }
   return messages.map(m => `[${m.role}]\n${m.content}`).join('\n\n');
 }
 
-function extractTextFromOpenAIResponse(json: any): string {
-  if (!json) return '';
+function extractTextFromOpenAIResponse(json: any): { text: string; reasoning?: string } {
+  if (!json) return { text: '' };
+
+  let text = '';
+  let reasoning = '';
+
   // chat/completions
   const choices = json.choices;
   if (Array.isArray(choices) && choices.length > 0) {
     const first = choices[0];
-    if (first && first.message && typeof first.message.content === 'string') {
-      return first.message.content;
-    }
-    if (typeof first.text === 'string') {
-      return first.text;
-    }
-    // 某些兼容实现把 delta 合在 content 中
-    if (first.delta && typeof first.delta.content === 'string') {
-      return first.delta.content;
+    if (first) {
+      if (first.message) {
+        if (typeof first.message.content === 'string') {
+          text = first.message.content;
+        }
+        if (typeof first.message.reasoning === 'string') {
+          reasoning = first.message.reasoning;
+        }
+      } else if (typeof first.text === 'string') {
+        text = first.text;
+      } else if (first.delta && typeof first.delta.content === 'string') {
+        // 兼容 delta
+        text = first.delta.content;
+      }
+      return { text, reasoning: reasoning || undefined };
     }
   }
+
   // 兜底
-  if (typeof json === 'string') return json;
+  if (typeof json === 'string') return { text: json };
   try {
-    return JSON.stringify(json);
+    return { text: JSON.stringify(json) };
   } catch {
-    return '';
+    return { text: '' };
   }
 }
 
-function extractDeltaFromSSE(json: any): string {
-  // OpenAI SSE: { choices: [ { delta: { content?: string } } ] }
+function extractDeltaFromSSE(json: any): { content: string; reasoning?: string } {
+  // OpenAI SSE: { choices: [ { delta: { content?: string, reasoning?: string } } ] }
   const c = json?.choices?.[0];
-  if (c?.delta?.content) return String(c.delta.content);
-  if (typeof c?.text === 'string') return c.text;
-  // 一些供应商直接使用 { data: "..." }
-  if (typeof json?.data === 'string') return json.data;
-  return '';
+  const res = { content: '', reasoning: '' };
+
+  if (c?.delta) {
+    if (typeof c.delta.content === 'string') res.content = c.delta.content;
+    if (typeof c.delta.reasoning === 'string') res.reasoning = c.delta.reasoning;
+  } else if (typeof c?.text === 'string') {
+    res.content = c.text;
+  } else if (typeof json?.data === 'string') {
+    res.content = json.data;
+  }
+
+  return {
+    content: res.content,
+    reasoning: res.reasoning || undefined,
+  };
 }
 
 function parseRetryAfterMs(res: Response): number | undefined {

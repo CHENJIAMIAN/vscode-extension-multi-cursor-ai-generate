@@ -58,6 +58,10 @@ export function getEffectiveConfig(): ConfigSchema {
 
     // 日志
     logLevel: s.get<'error' | 'warn' | 'info' | 'debug' | 'trace'>('logLevel'),
+
+    // Reasoning 模型支持
+    reasoningEffort: s.get<string>('reasoningEffort'),
+    disableReasoning: s.get<boolean>('disableReasoning'),
   };
 
   return mergeConfig(partial as Partial<ConfigSchema>);
