@@ -17,12 +17,12 @@ export function registerApiKeyCommands(deps: ApiKeyDeps): vscode.Disposable {
 
   const setCmd = vscode.commands.registerCommand('multiCursorAI.setApiKey', async () => {
     const input = await vscode.window.showInputBox({
-      title: '设置 API Key',
-      prompt: '输入用于调用 OpenAI 风格端点的 API Key（将安全保存在 SecretStorage）',
-      placeHolder: '例如：sk-****************',
+      title: vscode.l10n.t('Set API Key'),
+      prompt: vscode.l10n.t('Enter API Key for OpenAI-compatible endpoint (will be securely saved in SecretStorage)'),
+      placeHolder: vscode.l10n.t('For example: sk-****************'),
       password: true,
       ignoreFocusOut: true,
-      validateInput: (val) => (val.trim().length === 0 ? 'API Key 不能为空' : undefined),
+      validateInput: (val) => (val.trim().length === 0 ? vscode.l10n.t('API Key cannot be empty') : undefined),
     });
     if (input === undefined) {
       return; // 用户取消
@@ -34,22 +34,22 @@ export function registerApiKeyCommands(deps: ApiKeyDeps): vscode.Disposable {
       await setSecret(context.secrets, cfg, key);
       // 热更新 HttpClient
       httpClient.updateOptions({ apiKey: key });
-      vscode.window.showInformationMessage('API Key 已保存至 SecretStorage 并立即生效。');
+      vscode.window.showInformationMessage(vscode.l10n.t('API Key saved to SecretStorage and now effective.'));
     } catch (err: any) {
-      logger.error('保存 API Key 失败', err);
-      vscode.window.showErrorMessage(`保存 API Key 失败：${err?.message || String(err)}`);
+      logger.error(vscode.l10n.t('Failed to save API Key'), err);
+      vscode.window.showErrorMessage(vscode.l10n.t('Failed to save API Key: {0}', err?.message || String(err)));
     }
   });
 
   const clearCmd = vscode.commands.registerCommand('multiCursorAI.clearApiKey', async () => {
     const confirm = await vscode.window.showQuickPick(
       [
-        { label: '确认清除', description: '从 SecretStorage 移除 API Key' },
-        { label: '取消', description: '不进行任何操作' },
+        { label: vscode.l10n.t('Confirm Clear'), description: vscode.l10n.t('Remove API Key from SecretStorage') },
+        { label: vscode.l10n.t('Cancel'), description: vscode.l10n.t('Do nothing') },
       ],
-      { title: '清除 API Key', placeHolder: '此操作仅影响本机 SecretStorage', ignoreFocusOut: true }
+      { title: vscode.l10n.t('Clear API Key'), placeHolder: vscode.l10n.t('This operation only affects local SecretStorage'), ignoreFocusOut: true }
     );
-    if (!confirm || confirm.label !== '确认清除') {
+    if (!confirm || confirm.label !== vscode.l10n.t('Confirm Clear')) {
       return;
     }
 
@@ -57,10 +57,10 @@ export function registerApiKeyCommands(deps: ApiKeyDeps): vscode.Disposable {
       const cfg = getEffectiveConfig();
       await context.secrets.delete(cfg.apiKeySecretId);
       httpClient.updateOptions({ apiKey: '' });
-      vscode.window.showInformationMessage('已清除 API Key。');
+      vscode.window.showInformationMessage(vscode.l10n.t('API Key cleared.'));
     } catch (err: any) {
-      logger.error('清除 API Key 失败', err);
-      vscode.window.showErrorMessage(`清除 API Key 失败：${err?.message || String(err)}`);
+      logger.error(vscode.l10n.t('Failed to clear API Key'), err);
+      vscode.window.showErrorMessage(vscode.l10n.t('Failed to clear API Key: {0}', err?.message || String(err)));
     }
   });
 

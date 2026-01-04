@@ -12,7 +12,7 @@ export function registerConfigCommands(): vscode.Disposable[] {
             const config = vscode.workspace.getConfiguration('multiCursorAI');
             const current = config.get<boolean>('useStreaming');
             await config.update('useStreaming', !current, vscode.ConfigurationTarget.Global);
-            vscode.window.showInformationMessage(`流式传输 (Use Streaming): ${!current ? '已启用' : '已禁用'}`);
+            vscode.window.showInformationMessage(vscode.l10n.t('Use Streaming: {0}', !current ? vscode.l10n.t('Enabled') : vscode.l10n.t('Disabled')));
         })
     );
 
@@ -22,12 +22,12 @@ export function registerConfigCommands(): vscode.Disposable[] {
             const config = vscode.workspace.getConfiguration('multiCursorAI');
             const current = config.get<number>('temperature') ?? 0.2;
             const input = await vscode.window.showInputBox({
-                prompt: '设置采样温度 (0.0 - 2.0)',
+                prompt: vscode.l10n.t('Set Temperature (0.0 - 2.0)'),
                 value: current.toString(),
                 validateInput: (value) => {
                     const num = parseFloat(value);
                     if (isNaN(num) || num < 0 || num > 2) {
-                        return '请输入 0.0 到 2.0 之间的数字';
+                        return vscode.l10n.t('Please enter a number between 0.0 and 2.0');
                     }
                     return null;
                 }
@@ -35,7 +35,7 @@ export function registerConfigCommands(): vscode.Disposable[] {
             if (input !== undefined) {
                 const temp = parseFloat(input);
                 await config.update('temperature', temp, vscode.ConfigurationTarget.Global);
-                vscode.window.showInformationMessage(`采样温度 (Temperature) 已设置为: ${temp}`);
+                vscode.window.showInformationMessage(vscode.l10n.t('Temperature set to: {0}', temp));
             }
         })
     );
@@ -46,15 +46,15 @@ export function registerConfigCommands(): vscode.Disposable[] {
             const config = vscode.workspace.getConfiguration('multiCursorAI');
             const current = config.get<string>('preSeparator') ?? ' ';
             const input = await vscode.window.showInputBox({
-                prompt: '设置插入内容前的分隔符',
+                prompt: vscode.l10n.t('Set Pre-Separator'),
                 value: current,
-                placeHolder: '例如: " " 或 "\\n"'
+                placeHolder: vscode.l10n.t('For example: " " or "\\n"')
             });
             if (input !== undefined) {
                 // 处理转义字符
                 const processed = input.replace(/\\n/g, '\n').replace(/\\t/g, '\t').replace(/\\r/g, '\r');
                 await config.update('preSeparator', processed, vscode.ConfigurationTarget.Global);
-                vscode.window.showInformationMessage(`前置分隔符 (Pre Separator) 已设置`);
+                vscode.window.showInformationMessage(vscode.l10n.t('Pre-Separator has been set'));
             }
         })
     );
@@ -65,7 +65,7 @@ export function registerConfigCommands(): vscode.Disposable[] {
             const config = vscode.workspace.getConfiguration('multiCursorAI');
             const current = config.get<boolean>('trimResult');
             await config.update('trimResult', !current, vscode.ConfigurationTarget.Global);
-            vscode.window.showInformationMessage(`修剪结果 (Trim Result): ${!current ? '已启用' : '已禁用'}`);
+            vscode.window.showInformationMessage(vscode.l10n.t('Trim Result: {0}', !current ? vscode.l10n.t('Enabled') : vscode.l10n.t('Disabled')));
         })
     );
 
@@ -77,14 +77,14 @@ export function registerConfigCommands(): vscode.Disposable[] {
             const current = config.get<string>('logLevel') ?? 'info';
 
             const picked = await vscode.window.showQuickPick(levels, {
-                title: '选择日志级别',
-                placeHolder: `当前: ${current}`,
+                title: vscode.l10n.t('Select Log Level'),
+                placeHolder: vscode.l10n.t('Current: {0}', current),
                 canPickMany: false
             });
 
             if (picked) {
                 await config.update('logLevel', picked, vscode.ConfigurationTarget.Global);
-                vscode.window.showInformationMessage(`日志级别 (Log Level) 已设置为: ${picked}`);
+                vscode.window.showInformationMessage(vscode.l10n.t('Log Level set to: {0}', picked));
             }
         })
     );
@@ -97,14 +97,14 @@ export function registerConfigCommands(): vscode.Disposable[] {
             const current = config.get<string>('reasoningEffort') ?? 'medium';
 
             const picked = await vscode.window.showQuickPick(efforts, {
-                title: '选择推理强度 (Cerebras Reasoning)',
-                placeHolder: `当前: ${current}`,
+                title: vscode.l10n.t('Select Reasoning Effort (Cerebras Reasoning)'),
+                placeHolder: vscode.l10n.t('Current: {0}', current),
                 canPickMany: false
             });
 
             if (picked) {
                 await config.update('reasoningEffort', picked, vscode.ConfigurationTarget.Global);
-                vscode.window.showInformationMessage(`推理强度 (Reasoning Effort) 已设置为: ${picked}`);
+                vscode.window.showInformationMessage(vscode.l10n.t('Reasoning Effort set to: {0}', picked));
             }
         })
     );
@@ -115,7 +115,7 @@ export function registerConfigCommands(): vscode.Disposable[] {
             const config = vscode.workspace.getConfiguration('multiCursorAI');
             const current = config.get<boolean>('disableReasoning');
             await config.update('disableReasoning', !current, vscode.ConfigurationTarget.Global);
-            vscode.window.showInformationMessage(`禁用推理 (Disable Reasoning): ${!current ? '已启用' : '已禁用'}`);
+            vscode.window.showInformationMessage(vscode.l10n.t('Disable Reasoning: {0}', !current ? vscode.l10n.t('Enabled') : vscode.l10n.t('Disabled')));
         })
     );
 
@@ -125,7 +125,7 @@ export function registerConfigCommands(): vscode.Disposable[] {
             const config = vscode.workspace.getConfiguration('multiCursorAI');
             const current = config.get<boolean>('singleLineOutput');
             await config.update('singleLineOutput', !current, vscode.ConfigurationTarget.Global);
-            vscode.window.showInformationMessage(`单行输出 (Single Line Output): ${!current ? '已启用' : '已禁用'}`);
+            vscode.window.showInformationMessage(vscode.l10n.t('Single Line Output: {0}', !current ? vscode.l10n.t('Enabled') : vscode.l10n.t('Disabled')));
         })
     );
 

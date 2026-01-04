@@ -1,13 +1,14 @@
 {
   "name": "multi-cursor-ai-generate",
-  "displayName": "Multi Cursor AI Generate",
-  "description": "对多光标/多选区并发调用 OpenAI 风格端点生成文本，支持限流、重试、流式插入、状态栏与日志。",
+  "displayName": "%displayName%",
+  "description": "%description%",
   "publisher": "CHENJIAMIAN",
   "author": "CHENJIAMIAN",
   "version": "0.2.2",
   "engines": {
     "vscode": "^1.92.0"
   },
+  "l10n": "./l10n",
   "main": "./dist/src/extension.js",
   "categories": [
     "Other"
@@ -38,63 +39,63 @@
     "commands": [
       {
         "command": "multiCursorAI.generate",
-        "title": "Multi Cursor AI: Generate",
-        "category": "Multi Cursor AI"
+        "title": "%command.generate.title%",
+        "category": "%configuration.title%"
       },
       {
         "command": "multiCursorAI.syncModels",
-        "title": "Multi Cursor AI: Sync Models",
-        "category": "Multi Cursor AI"
+        "title": "%command.syncModels.title%",
+        "category": "%configuration.title%"
       },
       {
         "command": "multiCursorAI.setApiKey",
-        "title": "Multi Cursor AI: Set API Key",
-        "category": "Multi Cursor AI"
+        "title": "%command.setApiKey.title%",
+        "category": "%configuration.title%"
       },
       {
         "command": "multiCursorAI.clearApiKey",
-        "title": "Multi Cursor AI: Clear API Key",
-        "category": "Multi Cursor AI"
+        "title": "%command.clearApiKey.title%",
+        "category": "%configuration.title%"
       },
       {
         "command": "multiCursorAI.toggleUseStreaming",
-        "title": "Multi Cursor AI: Toggle Use Streaming",
-        "category": "Multi Cursor AI"
+        "title": "%command.toggleUseStreaming.title%",
+        "category": "%configuration.title%"
       },
       {
         "command": "multiCursorAI.setTemperature",
-        "title": "Multi Cursor AI: Set Temperature",
-        "category": "Multi Cursor AI"
+        "title": "%command.setTemperature.title%",
+        "category": "%configuration.title%"
       },
       {
         "command": "multiCursorAI.setPreSeparator",
-        "title": "Multi Cursor AI: Set Pre Separator",
-        "category": "Multi Cursor AI"
+        "title": "%command.setPreSeparator.title%",
+        "category": "%configuration.title%"
       },
       {
         "command": "multiCursorAI.toggleTrimResult",
-        "title": "Multi Cursor AI: Toggle Trim Result",
-        "category": "Multi Cursor AI"
+        "title": "%command.toggleTrimResult.title%",
+        "category": "%configuration.title%"
       },
       {
         "command": "multiCursorAI.setLogLevel",
-        "title": "Multi Cursor AI: Set Log Level",
-        "category": "Multi Cursor AI"
+        "title": "%command.setLogLevel.title%",
+        "category": "%configuration.title%"
       },
       {
         "command": "multiCursorAI.setReasoningEffort",
-        "title": "Multi Cursor AI: Set Reasoning Effort",
-        "category": "Multi Cursor AI"
+        "title": "%command.setReasoningEffort.title%",
+        "category": "%configuration.title%"
       },
       {
         "command": "multiCursorAI.toggleDisableReasoning",
-        "title": "Multi Cursor AI: Toggle Disable Reasoning",
-        "category": "Multi Cursor AI"
+        "title": "%command.toggleDisableReasoning.title%",
+        "category": "%configuration.title%"
       },
       {
         "command": "multiCursorAI.toggleSingleLineOutput",
-        "title": "Multi Cursor AI: Toggle Single Line Output",
-        "category": "Multi Cursor AI"
+        "title": "%command.toggleSingleLineOutput.title%",
+        "category": "%configuration.title%"
       }
     ],
     "keybindings": [
@@ -133,32 +134,32 @@
       ]
     },
     "configuration": {
-      "title": "Multi Cursor AI",
+      "title": "%configuration.title%",
       "properties": {
         "multiCursorAI.baseUrl": {
           "type": "string",
           "default": "https://api.openai.com",
-          "description": "OpenAI 风格 API 的基础 URL，例如 https://api.openai.com 或自建网关。"
+          "description": "%config.baseUrl.description%"
         },
         "multiCursorAI.apiKeySecretId": {
           "type": "string",
           "default": "multiCursorAI.apiKey",
-          "description": "SecretStorage 中保存 API Key 的标识符。"
+          "description": "%config.apiKeySecretId.description%"
         },
         "multiCursorAI.apiKeyEnvVar": {
           "type": "string",
           "default": "OPENAI_API_KEY",
-          "description": "从环境变量读取默认 API Key 的变量名。"
+          "description": "%config.apiKeyEnvVar.description%"
         },
         "multiCursorAI.authScheme": {
           "type": "string",
           "default": "Bearer",
-          "description": "Authorization 认证方案，通常为 Bearer。"
+          "description": "%config.authScheme.description%"
         },
         "multiCursorAI.modelDefault": {
           "type": "string",
           "default": "gpt-4o-mini",
-          "description": "默认使用的模型名称。"
+          "description": "%config.modelDefault.description%"
         },
         "multiCursorAI.modelList": {
           "type": "array",
@@ -171,50 +172,50 @@
             "gpt-4.1-mini",
             "gpt-3.5-turbo"
           ],
-          "description": "可选模型列表（QuickPick 中显示）。"
+          "description": "%config.modelList.description%"
         },
         "multiCursorAI.modelsPath": {
           "type": "string",
           "default": "/v1/models",
-          "description": "模型同步接口路径。"
+          "description": "%config.modelsPath.description%"
         },
         "multiCursorAI.requestPath": {
           "type": "string",
           "default": "/v1/chat/completions",
-          "description": "生成请求接口路径，优先 chat/completions，可改为 /v1/completions。"
+          "description": "%config.requestPath.description%"
         },
         "multiCursorAI.useStreaming": {
           "type": "boolean",
           "default": true,
-          "description": "是否使用 SSE 流式模式（端点需要支持 text/event-stream）。"
+          "description": "%config.useStreaming.description%"
         },
         "multiCursorAI.timeoutMs": {
           "type": "number",
           "default": 60000,
-          "description": "HTTP 请求超时时间（毫秒）。"
+          "description": "%config.timeoutMs.description%"
         },
         "multiCursorAI.proxy": {
           "type": "string",
           "default": "",
-          "markdownDescription": "HTTP(S) 代理，例如 http://127.0.0.1:7890。为空表示不使用代理。"
+          "markdownDescription": "%config.proxy.description%"
         },
         "multiCursorAI.rejectUnauthorized": {
           "type": "boolean",
           "default": true,
-          "description": "是否拒绝不受信 TLS 证书（自签名）。设为 false 可忽略 TLS 校验（不安全）。"
+          "description": "%config.rejectUnauthorized.description%"
         },
         "multiCursorAI.temperature": {
           "type": "number",
           "default": 0.2,
           "minimum": 0,
           "maximum": 2,
-          "description": "采样温度。"
+          "description": "%config.temperature.description%"
         },
         "multiCursorAI.maxTokens": {
           "type": "number",
           "default": 0,
           "minimum": 0,
-          "description": "返回最大 token 数限制。设为 0 表示不限制（由服务器决定）。"
+          "description": "%config.maxTokens.description%"
         },
         "multiCursorAI.requestBodyMode": {
           "type": "string",
@@ -224,48 +225,48 @@
             "completions"
           ],
           "default": "auto",
-          "description": "请求体映射模式：自动选择 chat/completions，或强制某种模式。"
+          "description": "%config.requestBodyMode.description%"
         },
         "multiCursorAI.maxConcurrency": {
           "type": "number",
           "default": 30,
           "minimum": 1,
-          "description": "最大并发请求数。"
+          "description": "%config.maxConcurrency.description%"
         },
         "multiCursorAI.httpMaxConnections": {
           "type": "number",
           "default": 30,
           "minimum": 1,
-          "description": "HTTP 连接池最大连接数（建议与最大并发对齐）。"
+          "description": "%config.httpMaxConnections.description%"
         },
         "multiCursorAI.maxRequestsPerMinute": {
           "type": "number",
           "default": 60,
           "minimum": 1,
-          "description": "每分钟最大请求数（令牌桶速率）。"
+          "description": "%config.maxRequestsPerMinute.description%"
         },
         "multiCursorAI.dynamicLimitProbe": {
           "type": "boolean",
           "default": true,
-          "description": "动态限流探测：根据速率限制响应头与429/503实时调整。"
+          "description": "%config.dynamicLimitProbe.description%"
         },
         "multiCursorAI.maxRetries": {
           "type": "number",
           "default": 8,
           "minimum": 0,
-          "description": "失败后的最大重试次数（含退避）。"
+          "description": "%config.maxRetries.description%"
         },
         "multiCursorAI.baseBackoffMs": {
           "type": "number",
           "default": 500,
           "minimum": 100,
-          "description": "指数退避的基础毫秒。"
+          "description": "%config.baseBackoffMs.description%"
         },
         "multiCursorAI.maxBackoffMs": {
           "type": "number",
           "default": 60000,
           "minimum": 1000,
-          "description": "指数退避的最大毫秒上限。"
+          "description": "%config.maxBackoffMs.description%"
         },
         "multiCursorAI.insertMode": {
           "type": "string",
@@ -274,57 +275,57 @@
             "replace"
           ],
           "default": "append",
-          "description": "插入模式：在末尾追加或替换选区。"
+          "description": "%config.insertMode.description%"
         },
         "multiCursorAI.preSeparator": {
           "type": "string",
           "default": " ",
-          "description": "插入内容前的分隔符。"
+          "description": "%config.preSeparator.description%"
         },
         "multiCursorAI.postSeparator": {
           "type": "string",
           "default": "",
-          "description": "插入内容后的分隔符。"
+          "description": "%config.postSeparator.description%"
         },
         "multiCursorAI.trimResult": {
           "type": "boolean",
           "default": true,
-          "description": "是否修剪返回文本的首尾空白。"
+          "description": "%config.trimResult.description%"
         },
         "multiCursorAI.promptTemplate": {
           "type": "string",
           "default": "请根据用户意图对所选文本进行处理。\\n用户意图: {userPrompt}\\n所选文本: \\n\\n{selection}",
-          "markdownDescription": "提示模板，至少包含 {userPrompt} 与 {selection} 占位符。"
+          "markdownDescription": "%config.promptTemplate.description%"
         },
         "multiCursorAI.systemPromptEnabled": {
           "type": "boolean",
           "default": false,
-          "description": "是否发送系统提示（system message）。"
+          "description": "%config.systemPromptEnabled.description%"
         },
         "multiCursorAI.globalPrependInstruction": {
           "type": "string",
           "default": "",
-          "markdownDescription": "在最终用户提示前追加的全局指令，用于约束风格或格式。"
+          "markdownDescription": "%config.globalPrependInstruction.description%"
         },
         "multiCursorAI.contextVars.includeFileName": {
           "type": "boolean",
           "default": true,
-          "description": "上下文变量：注入文件名。"
+          "description": "%config.contextVars.includeFileName.description%"
         },
         "multiCursorAI.contextVars.includeLanguageId": {
           "type": "boolean",
           "default": true,
-          "description": "上下文变量：注入语言 ID。"
+          "description": "%config.contextVars.includeLanguageId.description%"
         },
         "multiCursorAI.contextVars.includeRelativePath": {
           "type": "boolean",
           "default": true,
-          "description": "上下文变量：注入相对路径。"
+          "description": "%config.contextVars.includeRelativePath.description%"
         },
         "multiCursorAI.contextVars.includeNow": {
           "type": "boolean",
           "default": true,
-          "description": "上下文变量：注入当前时间（ISO）。"
+          "description": "%config.contextVars.includeNow.description%"
         },
         "multiCursorAI.logLevel": {
           "type": "string",
@@ -336,14 +337,14 @@
             "trace"
           ],
           "default": "info",
-          "description": "日志级别。"
+          "description": "%config.logLevel.description%"
         },
         "multiCursorAI.promptHistoryLimit": {
           "type": "number",
           "default": 100,
           "minimum": 1,
           "maximum": 1000,
-          "description": "提示词历史最大条数（用于 QuickPick 历史列表）。"
+          "description": "%config.promptHistoryLimit.description%"
         },
         "multiCursorAI.reasoningEffort": {
           "type": "string",
@@ -354,17 +355,17 @@
             "high"
           ],
           "default": "medium",
-          "markdownDescription": "Cerebras Reasoning 模型推理强度（适用于 gpt-oss-120b）。\n\n- `none`: 不使用推理功能\n- `low`: 最小推理，更快响应\n- `medium`: 中等推理（默认推理级别）\n- `high`: 深度推理，更全面的分析"
+          "markdownDescription": "%config.reasoningEffort.description%"
         },
         "multiCursorAI.disableReasoning": {
           "type": "boolean",
           "default": false,
-          "markdownDescription": "是否禁用 Cerebras Reasoning（适用于 zai-glm-4.6 模型）。设为 `false` 启用推理，设为 `true` 禁用推理。"
+          "markdownDescription": "%config.disableReasoning.description%"
         },
         "multiCursorAI.singleLineOutput": {
           "type": "boolean",
           "default": false,
-          "description": "是否强行将 AI 输出压缩为单行（将换行符替换为 \\n 字符）。"
+          "description": "%config.singleLineOutput.description%"
         }
       }
     }

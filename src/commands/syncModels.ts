@@ -16,12 +16,12 @@ export function registerSyncModelsCommand(deps: SyncModelsDeps): vscode.Disposab
     const controller = new AbortController();
     const pick = await vscode.window.showQuickPick(
       [
-        { label: '开始同步', description: '从远端拉取模型列表并更新设置' },
-        { label: '取消', description: '不进行任何操作' },
+        { label: vscode.l10n.t('Start Sync'), description: vscode.l10n.t('Fetch model list from remote and update settings') },
+        { label: vscode.l10n.t('Cancel'), description: vscode.l10n.t('Do nothing') },
       ],
-      { placeHolder: '模型同步', ignoreFocusOut: true }
+      { placeHolder: vscode.l10n.t('Model Sync'), ignoreFocusOut: true }
     );
-    if (!pick || pick.label !== '开始同步') {
+    if (!pick || pick.label !== vscode.l10n.t('Start Sync')) {
       return;
     }
 
@@ -29,7 +29,7 @@ export function registerSyncModelsCommand(deps: SyncModelsDeps): vscode.Disposab
       const models = await vscode.window.withProgress<string[]>(
         {
           location: vscode.ProgressLocation.Notification,
-          title: '正在同步模型列表…',
+          title: vscode.l10n.t('Syncing model list…'),
           cancellable: true,
         },
         async (_progress, token) => {
@@ -45,22 +45,22 @@ export function registerSyncModelsCommand(deps: SyncModelsDeps): vscode.Disposab
 
       if (models && models.length > 0) {
         const picked = await vscode.window.showQuickPick(models, {
-          title: `同步成功（${models.length}）- 选择一个模型作为参考`,
+          title: vscode.l10n.t('Sync successful ({0}) - Select a model as reference', models.length),
           canPickMany: false,
           ignoreFocusOut: true,
         });
         if (picked) {
           await vscode.workspace.getConfiguration('multiCursorAI').update('modelDefault', picked, vscode.ConfigurationTarget.Global);
-          vscode.window.showInformationMessage(`已将默认模型设置为：${picked}`);
+          vscode.window.showInformationMessage(vscode.l10n.t('Default model set to: {0}', picked));
         }
       }
     } catch (err: any) {
       if (err?.message === 'aborted') {
-        vscode.window.showInformationMessage('模型同步已取消。');
+        vscode.window.showInformationMessage(vscode.l10n.t('Model sync cancelled.'));
         return;
       }
-      logger.error('模型同步执行失败', err);
-      vscode.window.showErrorMessage(`模型同步失败：${err?.message || String(err)}`);
+      logger.error(vscode.l10n.t('Model sync execution failed'), err);
+      vscode.window.showErrorMessage(vscode.l10n.t('Model sync failed: {0}', err?.message || String(err)));
     }
   });
 

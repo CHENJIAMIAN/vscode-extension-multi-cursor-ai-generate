@@ -24,20 +24,20 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
 
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
-      vscode.window.showWarningMessage('未检测到活动编辑器。');
+      vscode.window.showWarningMessage(vscode.l10n.t('No active editor detected.'));
       return;
     }
 
     const doc = editor.document;
     if (doc.isClosed) {
-      vscode.window.showWarningMessage('当前文档已关闭。');
+      vscode.window.showWarningMessage(vscode.l10n.t('Current document is closed.'));
       return;
     }
 
     // 选区：空选区按整行处理；过滤空内容
     const ranges = computeSelectionRanges(editor);
     if (ranges.length === 0) {
-      vscode.window.showInformationMessage('未选择文本，且所在行为空。');
+      vscode.window.showInformationMessage(vscode.l10n.t('No text selected and current line is empty.'));
       return;
     }
 
@@ -46,11 +46,11 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
     // 提示词（支持历史选择或新增，最多记住 100 条）
     const history = (context.globalState.get<string[]>(PROMPT_HISTORY_KEY) ?? [])
       .filter((s) => typeof s === 'string' && s.trim().length > 0);
-    const NEW_PROMPT_LABEL = '$(pencil) 输入新的提示词...';
+    const NEW_PROMPT_LABEL = vscode.l10n.t('$(pencil) Enter new prompt...');
     const quickPickItems = history.length > 0 ? [...history, NEW_PROMPT_LABEL] : [NEW_PROMPT_LABEL];
     const pickedPromptOrNew = await vscode.window.showQuickPick(quickPickItems, {
-      title: '选择或输入提示词',
-      placeHolder: '选择历史提示词，或选择“输入新的提示词...”以新增',
+      title: vscode.l10n.t('Select or Enter Prompt'),
+      placeHolder: vscode.l10n.t('Select a history prompt, or choose "Enter new prompt..." to create new'),
       canPickMany: false,
       ignoreFocusOut: true,
     });
@@ -60,8 +60,8 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
     let userPrompt: string | undefined;
     if (pickedPromptOrNew === NEW_PROMPT_LABEL) {
       const input = await vscode.window.showInputBox({
-        prompt: '输入你的提示词（将对每个选区独立生成）',
-        placeHolder: '例如：将所选代码重构为异步函数并添加错误处理',
+        prompt: vscode.l10n.t('Enter your prompt (will be applied to each selection independently)'),
+        placeHolder: vscode.l10n.t('For example: Refactor selected code to async functions with error handling'),
         ignoreFocusOut: true,
       });
       if (input === undefined) {
@@ -72,7 +72,7 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
       userPrompt = pickedPromptOrNew.trim();
     }
     if (!userPrompt) {
-      vscode.window.showInformationMessage('提示词不能为空。');
+      vscode.window.showInformationMessage(vscode.l10n.t('Prompt cannot be empty.'));
       return;
     }
     // 更新历史：将本次提示词移到最前，去重并限制为最新 100 条
@@ -88,20 +88,20 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
       : models;
 
     const picked = await vscode.window.showQuickPick(modelsForPick, {
-      title: '选择模型',
-      placeHolder: '选择用于生成的模型',
+      title: vscode.l10n.t('Select Model'),
+      placeHolder: vscode.l10n.t('Select model for generation'),
       canPickMany: false,
       ignoreFocusOut: true,
     });
     const model = picked || lastModel || cfg.modelDefault;
     await context.globalState.update(LAST_MODEL_KEY, model);
 
-    // 装饰器（“生成中”）
+    // 装饰器（"生成中"）
     const loadingDecoration = vscode.window.createTextEditorDecorationType({
       isWholeLine: true,
       overviewRulerColor: new vscode.ThemeColor('editorWarning.foreground'),
       after: {
-        contentText: ' 正在生成...',
+        contentText: vscode.l10n.t(' Generating...'),
         color: new vscode.ThemeColor('editorCodeLens.foreground'),
         margin: '0 0 0 8px',
       },
@@ -140,7 +140,7 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
 
     const startTs = Date.now();
     try {
-      await withCancellableProgress('AI 生成中', ranges.length, async (progressCtrl) => {
+      await withCancellableProgress(vscode.l10n.t('AI Generating'), ranges.length, async (progressCtrl) => {
         const nonStreamingResults: InsertionResult[] = [];
         const useStreaming = cfg.useStreaming === true;
 
@@ -242,7 +242,7 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
 
               if (!generatedText) {
                 // AI 返回空内容（可能是推理被截断等情况），需要恢复原内容
-                deps.logger.warn('AI 返回空内容，正在恢复原文', {
+                deps.logger.warn(vscode.l10n.t('AI returned empty content, restoring original text'), {
                   reasoningLength: res.reasoning?.length ?? 0,
                   originalTextLength: originalText.length
                 });
@@ -250,9 +250,9 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
                   // 调用 inserter 的恢复方法来正确删除已插入的分隔符并恢复原文
                   await inserter.restoreOriginal(originalText);
                 } catch (restoreErr) {
-                  deps.logger.error('恢复原内容失败', restoreErr);
+                  deps.logger.error(vscode.l10n.t('Failed to restore original content'), restoreErr);
                 }
-                vscode.window.showWarningMessage('AI 返回空内容，已保留原文。可能是模型推理被截断，请重试。');
+                vscode.window.showWarningMessage(vscode.l10n.t('AI returned empty content, original text preserved. The model reasoning may have been truncated, please retry.'));
               }
 
               progressCtrl.markDone();
@@ -285,7 +285,7 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
               progressCtrl.markCanceled();
             } else {
               progressCtrl.markFailed();
-              deps.logger.error('生成失败', err);
+              deps.logger.error(vscode.l10n.t('Generation failed'), err);
               showFriendlyError(err);
             }
           } finally {
@@ -323,13 +323,13 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
         if (nonStreamingResults.length > 0) {
           const ok = await applyInsertions(nonStreamingResults);
           if (!ok) {
-            vscode.window.showWarningMessage('部分编辑操作未能成功应用（可能是只读或文件已更改）。');
+            vscode.window.showWarningMessage(vscode.l10n.t('Some edit operations failed to apply (file may be read-only or changed).'));
           }
         }
       });
 
       const elapsed = Date.now() - startTs;
-      deps.logger.info(`生成完成，用时 ${Math.round(elapsed)}ms`);
+      deps.logger.info(vscode.l10n.t('Generation completed in {0}ms', Math.round(elapsed)));
     } finally {
       try {
         // 移除装饰
@@ -372,15 +372,15 @@ function showFriendlyError(err: any) {
   // 常见错误处理
   const msg = (err && (err.message || err.toString())) ?? String(err);
   if (/timeout/i.test(msg)) {
-    vscode.window.showWarningMessage('请求超时，请稍后重试或增大超时设置（multiCursorAI.timeoutMs）。');
+    vscode.window.showWarningMessage(vscode.l10n.t('Request timeout. Please retry later or increase timeout setting (multiCursorAI.timeoutMs).'));
   } else if (/429|rate.?limit/i.test(msg)) {
-    vscode.window.showWarningMessage('触发限流，已进行退避重试。可降低并发或提高限额。');
+    vscode.window.showWarningMessage(vscode.l10n.t('Rate limit triggered, backoff retry performed. Consider reducing concurrency or increasing quota.'));
   } else if (/ENOTFOUND|ECONN|network|fetch/i.test(msg)) {
-    vscode.window.showWarningMessage('网络错误，请检查代理、baseUrl 与网络连接。');
+    vscode.window.showWarningMessage(vscode.l10n.t('Network error. Please check proxy, baseUrl and network connection.'));
   } else if (/aborted/i.test(msg)) {
     // 取消无需提示
   } else {
-    vscode.window.showWarningMessage(`生成失败：${truncate(msg, 200)}`);
+    vscode.window.showWarningMessage(vscode.l10n.t('Generation failed: {0}', truncate(msg, 200)));
   }
 }
 
