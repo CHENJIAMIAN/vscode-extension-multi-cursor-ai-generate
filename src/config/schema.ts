@@ -84,7 +84,7 @@ export const defaultConfig: ConfigSchema = {
   modelList: ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1-mini', 'gpt-3.5-turbo'],
   modelsPath: '/v1/models',
   requestPath: '/v1/chat/completions',
-  useStreaming: false,
+  useStreaming: true,
   timeoutMs: 60000,
   proxy: '',
   rejectUnauthorized: true,
@@ -123,8 +123,8 @@ export const defaultConfig: ConfigSchema = {
   logLevel: 'info',
 
   // Reasoning 模型支持
-  reasoningEffort: 'none', // 默认不使用 reasoning
-  disableReasoning: true, // 默认禁用 reasoning（对于 zai-glm-4.6）
+  reasoningEffort: 'medium', // 默认使用 medium
+  disableReasoning: false, // 默认开启 reasoning
 
   singleLineOutput: false,
 };
