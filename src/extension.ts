@@ -10,6 +10,7 @@ import { StatusBarController } from './ui/status';
 import { registerGenerateCommand } from './commands/generate';
 import { registerSyncModelsCommand } from './commands/syncModels';
 import { registerApiKeyCommands } from './commands/apiKey';
+import { registerConfigCommands } from './commands/configCommands';
 
 // 全局单例容器
 let logger: Logger;
@@ -96,6 +97,7 @@ export async function activate(context: vscode.ExtensionContext) {
       logger,
       httpClient,
     }),
+    ...registerConfigCommands(),
   );
 
   // 配置变更监听

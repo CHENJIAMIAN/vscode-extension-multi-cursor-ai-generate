@@ -55,6 +55,46 @@
         "command": "multiCursorAI.clearApiKey",
         "title": "Multi Cursor AI: Clear API Key",
         "category": "Multi Cursor AI"
+      },
+      {
+        "command": "multiCursorAI.toggleUseStreaming",
+        "title": "Multi Cursor AI: Toggle Use Streaming",
+        "category": "Multi Cursor AI"
+      },
+      {
+        "command": "multiCursorAI.setTemperature",
+        "title": "Multi Cursor AI: Set Temperature",
+        "category": "Multi Cursor AI"
+      },
+      {
+        "command": "multiCursorAI.setPreSeparator",
+        "title": "Multi Cursor AI: Set Pre Separator",
+        "category": "Multi Cursor AI"
+      },
+      {
+        "command": "multiCursorAI.toggleTrimResult",
+        "title": "Multi Cursor AI: Toggle Trim Result",
+        "category": "Multi Cursor AI"
+      },
+      {
+        "command": "multiCursorAI.setLogLevel",
+        "title": "Multi Cursor AI: Set Log Level",
+        "category": "Multi Cursor AI"
+      },
+      {
+        "command": "multiCursorAI.setReasoningEffort",
+        "title": "Multi Cursor AI: Set Reasoning Effort",
+        "category": "Multi Cursor AI"
+      },
+      {
+        "command": "multiCursorAI.toggleDisableReasoning",
+        "title": "Multi Cursor AI: Toggle Disable Reasoning",
+        "category": "Multi Cursor AI"
+      },
+      {
+        "command": "multiCursorAI.toggleSingleLineOutput",
+        "title": "Multi Cursor AI: Toggle Single Line Output",
+        "category": "Multi Cursor AI"
       }
     ],
     "keybindings": [
