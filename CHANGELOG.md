@@ -2,6 +2,13 @@
 
 所有显著更改都会记录在此文件中。
 
+## 0.2.3
+
+- l10n: Localization support (Chinese/English)
+- feat: Expose configuration options to commands
+- fix: Fix concurrent AI response ordering bugs
+- fix: Remove default max tokens to respect server defaults
+
 ## 0.1.0
 
 初始版本，核心能力：
