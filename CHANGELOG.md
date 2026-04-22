@@ -2,6 +2,11 @@
 
 所有显著更改都会记录在此文件中。
 
+## 0.2.4
+
+- fix: 修复 VSIX 发布包缺少运行时依赖 `undici`，导致扩展激活失败和命令无法注册的问题。
+- test: 增加 VSIX 发布清单回归测试，确保运行时代码与生产依赖被打入发布包。
+
 ## 0.2.3
 
 - l10n: Localization support (Chinese/English)

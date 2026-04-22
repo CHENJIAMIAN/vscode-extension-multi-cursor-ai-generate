@@ -12,10 +12,6 @@ scripts/**
 # 不排除 README/CHANGELOG/LICENSE
 # *.md
 
-# Node/binaries
-node_modules/**
-!node_modules/.bin/
-
 # Keep only compiled output
 !dist/**
 !images/**
