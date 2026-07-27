@@ -67,5 +67,10 @@
     "Model sync failed": "模型同步失败",
     "Failed to save API Key": "保存 API Key 失败",
     "Failed to clear API Key": "清除 API Key 失败",
-    "Model sync execution failed": "模型同步执行失败"
+    "Model sync execution failed": "模型同步执行失败",
+    "Multi Cursor AI\n\n- Shows concurrency, rate limit, and queue metrics\n- Click to open extension settings": "多光标 AI\n\n- 显示并发、限额和队列指标\n- 点击打开扩展设置",
+    "Total {0}": "总数 {0}",
+    "Completed {0}": "完成 {0}",
+    "Failed {0}": "失败 {0}",
+    "Canceled {0}": "取消 {0}"
 }

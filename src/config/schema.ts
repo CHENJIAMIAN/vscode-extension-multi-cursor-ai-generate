@@ -107,7 +107,7 @@ export const defaultConfig: ConfigSchema = {
   trimResult: true,
 
   promptTemplate:
-    '请根据用户意图对所选文本进行处理。\n用户意图: {userPrompt}\n所选文本: \n\n{selection}',
+    'Process the selected text according to the user intent.\nUser intent: {userPrompt}\nSelected text:\n\n{selection}',
   systemPromptEnabled: false,
   globalPrependInstruction: '',
   contextVars: {

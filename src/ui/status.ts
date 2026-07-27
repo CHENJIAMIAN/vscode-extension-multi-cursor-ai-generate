@@ -20,7 +20,9 @@ export class StatusBarController {
     this.item.name = 'Multi Cursor AI';
     this.item.command = 'multiCursorAI.openSettingsInternal';
     this.updateText();
-    this.item.tooltip = new vscode.MarkdownString('Multi Cursor AI\n\n- 显示并发/限额/队列\n- 点击打开扩展设置');
+    this.item.tooltip = new vscode.MarkdownString(
+      vscode.l10n.t('Multi Cursor AI\n\n- Shows concurrency, rate limit, and queue metrics\n- Click to open extension settings'),
+    );
     this.item.show();
 
     // 内部命令
@@ -34,15 +36,21 @@ export class StatusBarController {
   }
 
   public update(m: StatusMetrics) {
-    if (typeof m.concurrency === 'number') this.concurrency = m.concurrency;
-    if (typeof m.rpm === 'number') this.rpm = m.rpm;
-    if (typeof m.queued === 'number') this.queued = m.queued;
+    if (typeof m.concurrency === 'number') {
+      this.concurrency = m.concurrency;
+    }
+    if (typeof m.rpm === 'number') {
+      this.rpm = m.rpm;
+    }
+    if (typeof m.queued === 'number') {
+      this.queued = m.queued;
+    }
     this.updateText();
   }
 
   private updateText() {
     const parts = [
-      `$(symbol-event) AI`,
+      '$(symbol-event) AI',
       `$(run) ${this.concurrency}`,
       `$(clock) ${this.rpm}`,
       `$(repo-pull) ${this.queued}`,

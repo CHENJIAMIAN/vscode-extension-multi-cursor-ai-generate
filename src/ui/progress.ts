@@ -45,10 +45,14 @@ export async function withCancellableProgress<T>(
 
       const updateMessage = () => {
         const parts: string[] = [];
-        parts.push(`总数 ${counters.total}`);
-        parts.push(`完成 ${counters.done}`);
-        if (counters.failed) parts.push(`失败 ${counters.failed}`);
-        if (counters.canceled) parts.push(`取消 ${counters.canceled}`);
+        parts.push(vscode.l10n.t('Total {0}', counters.total));
+        parts.push(vscode.l10n.t('Completed {0}', counters.done));
+        if (counters.failed) {
+          parts.push(vscode.l10n.t('Failed {0}', counters.failed));
+        }
+        if (counters.canceled) {
+          parts.push(vscode.l10n.t('Canceled {0}', counters.canceled));
+        }
         progress.report({
           message: parts.join(' · '),
           increment: 0,
