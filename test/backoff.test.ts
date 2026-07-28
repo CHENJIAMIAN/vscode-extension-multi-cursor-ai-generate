@@ -29,7 +29,7 @@ describe('backoff.retryWithBackoff()', () => {
       called += 1;
       throw new Error('always fail');
     };
-    let attempts: number[] = [];
+    const attempts: number[] = [];
     try {
       await retryWithBackoff(fn, {
         maxRetries: 2,

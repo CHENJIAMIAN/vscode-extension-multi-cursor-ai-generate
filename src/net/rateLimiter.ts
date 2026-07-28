@@ -205,7 +205,7 @@ export class TokenBucketPool {
     while (this.canStart()) {
       // 启动一个任务
       const t = this.queue.shift();
-      if (!t) break;
+      if (!t) {break;}
 
       // 消耗 1 个令牌（不足 1 时向下取整，确保每任务至少消耗 1）
       const before = this.tokens;

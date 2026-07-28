@@ -231,7 +231,7 @@ export function registerGenerateCommand(deps: GenerateCommandDeps): vscode.Dispo
               inserter.dispose();
 
               // 检查生成结果是否为空
-              let generatedText = (res.text ?? '').trim();
+              const generatedText = (res.text ?? '').trim();
               if (cfg.singleLineOutput) {
                 // 虽流式已替换，但在完整性检查时保持逻辑一致 (其实 stream 下 res.text 可能也是原始的，取决于 httpClient 实现，稳妥起见不依赖 res.text 做展示，只做非空检查)
                 // 注意：httpClient.generate 返回的 text 是累积后的完整文本。

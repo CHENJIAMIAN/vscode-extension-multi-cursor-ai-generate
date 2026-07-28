@@ -33,7 +33,7 @@ export interface RenderOutput {
  */
 export function render(input: RenderInput): RenderOutput {
   const selectionClean = input.trimSelection !== false
-    ? trimBlankLines(limitLength(input.selection ?? '', input.maxSelectionChars ?? 120000))
+    ? limitLength(trimBlankLines(input.selection ?? ''), input.maxSelectionChars ?? 120000)
     : limitLength(input.selection ?? '', input.maxSelectionChars ?? 120000);
 
   const vars: Record<string, string> = {
@@ -94,14 +94,14 @@ function trimBlankLines(text: string): string {
   const lines = (text ?? '').split(/\r?\n/);
   let start = 0;
   let end = lines.length - 1;
-  while (start <= end && lines[start].trim() === '') start++;
-  while (end >= start && lines[end].trim() === '') end--;
+  while (start <= end && lines[start].trim() === '') {start++;}
+  while (end >= start && lines[end].trim() === '') {end--;}
   const sliced = lines.slice(start, end + 1).join('\n');
   return sliced.trim();
 }
 
 function limitLength(text: string, max: number): string {
-  if (!Number.isFinite(max) || max <= 0) return text ?? '';
+  if (!Number.isFinite(max) || max <= 0) {return text ?? '';}
   const s = text ?? '';
   return s.length > max ? s.slice(0, max) : s;
 }
@@ -118,7 +118,7 @@ function joinMessagesAsPrompt(messages: Array<{ role: string; content: string }>
 export function collectContextVars(
   doc: { fileName?: string; languageId?: string; uri?: { toString?: () => string; path?: string } } | undefined
 ): RenderContextVars {
-  if (!doc) return { now: new Date().toISOString() };
+  if (!doc) {return { now: new Date().toISOString() };}
   const fileName = doc.fileName ? basename(doc.fileName) : '';
   const languageId = doc.languageId || '';
   const now = new Date().toISOString();
@@ -145,7 +145,7 @@ export function collectContextVars(
 }
 
 function basename(p: string): string {
-  if (!p) return '';
+  if (!p) {return '';}
   const idx = Math.max(p.lastIndexOf('/'), p.lastIndexOf('\\'));
   return idx >= 0 ? p.slice(idx + 1) : p;
 }

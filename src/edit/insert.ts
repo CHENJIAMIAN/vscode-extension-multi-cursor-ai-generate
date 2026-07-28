@@ -46,7 +46,7 @@ export async function applyInsertions(results: InsertionResult[]): Promise<boole
     arr.sort((a, b) => {
       const pa = a.range.start;
       const pb = b.range.start;
-      if (pa.line !== pb.line) return pb.line - pa.line;
+      if (pa.line !== pb.line) {return pb.line - pa.line;}
       return pb.character - pa.character;
     });
 
@@ -56,8 +56,8 @@ export async function applyInsertions(results: InsertionResult[]): Promise<boole
       continue;
     }
 
-    const editor = await findVisibleEditorForDocument(doc);
-    const ok = await vscode.workspace.applyEdit(buildWorkspaceEdit(doc, arr, editor));
+    await findVisibleEditorForDocument(doc);
+    const ok = await vscode.workspace.applyEdit(buildWorkspaceEdit(doc, arr));
     allOk = allOk && ok;
   }
 
@@ -66,8 +66,7 @@ export async function applyInsertions(results: InsertionResult[]): Promise<boole
 
 function buildWorkspaceEdit(
   doc: vscode.TextDocument,
-  arr: InsertionResult[],
-  editor?: vscode.TextEditor
+  arr: InsertionResult[]
 ): vscode.WorkspaceEdit {
   const edit = new vscode.WorkspaceEdit();
   for (const r of arr) {
@@ -88,7 +87,7 @@ function buildFinalText(r: InsertionResult): string {
   return `${r.preSeparator ?? ''}${core}${r.postSeparator ?? ''}`;
 }
 
-function getDocFromRange(range: vscode.Range): vscode.TextDocument | undefined {
+function getDocFromRange(_range: vscode.Range): vscode.TextDocument | undefined {
   // 无直接 API 从 Range 到 Document；需由可见编辑器查找匹配
   for (const ed of vscode.window.visibleTextEditors) {
     if (ed.document && ed.selections) {
@@ -182,7 +181,7 @@ export class StreamInserter {
    * @param insertedLines 插入的行数增量（多行时 > 0）
    */
   public adjustAnchorOffset(sourceOriginalLine: number, sourceOriginalChar: number, insertedLines: number): void {
-    if (this.disposed) return;
+    if (this.disposed) {return;}
 
     // 只有当本 inserter 逻辑上位于触发源之后时，才需要调整
     // (即：原始位置在触发源的原始位置之后)
@@ -213,7 +212,7 @@ export class StreamInserter {
    * 启动：在 replace 模式下先清空原范围；如有 preSeparator 则先插入
    */
   public async start(): Promise<void> {
-    if (this.disposed) return;
+    if (this.disposed) {return;}
     await this.enqueue(async () => {
       // 使用最新的 originalRange（可能已被其他并发任务推移）
       if (this.mode === 'replace' && this.originalRange) {
@@ -250,7 +249,7 @@ export class StreamInserter {
   private notifyOtherInsertersForDelete(deletedLines: number): void {
     const key = this.doc.uri.toString();
     const trackers = StreamInserter.anchorTrackers.get(key);
-    if (!trackers) return;
+    if (!trackers) {return;}
 
     for (const other of trackers) {
       if (other !== this && !other.disposed) {
@@ -285,8 +284,8 @@ export class StreamInserter {
   }
 
   public async appendDelta(delta: string): Promise<void> {
-    if (this.disposed) return;
-    if (!delta) return;
+    if (this.disposed) {return;}
+    if (!delta) {return;}
     const text = this.trimResult ? delta : delta; // 流式不做 trim，避免破坏格式；最终 finish 时不额外处理
     await this.enqueue(async () => {
       await this.editor.edit((eb: vscode.TextEditorEdit) => eb.insert(this.anchor, text), { undoStopBefore: false, undoStopAfter: false });
@@ -298,7 +297,6 @@ export class StreamInserter {
 
   private updateAnchor(text: string) {
     const lines = text.split(/\r\n|\r|\n/);
-    const insertedAtLine = this.anchor.line;
     const insertedLines = lines.length - 1; // 插入的新行数
 
     if (lines.length === 1) {
@@ -325,7 +323,7 @@ export class StreamInserter {
   private notifyOtherInserters(insertedLines: number): void {
     const key = this.doc.uri.toString();
     const trackers = StreamInserter.anchorTrackers.get(key);
-    if (!trackers) return;
+    if (!trackers) {return;}
 
     for (const other of trackers) {
       if (other !== this && !other.disposed) {
@@ -335,7 +333,7 @@ export class StreamInserter {
   }
 
   public async finish(): Promise<void> {
-    if (this.disposed) return;
+    if (this.disposed) {return;}
     await this.enqueue(async () => {
       if (this.postSeparator && this.inserted) {
         await this.editor.edit((eb: vscode.TextEditorEdit) => eb.insert(this.anchor, this.postSeparator), {

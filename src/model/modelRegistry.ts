@@ -13,7 +13,6 @@ export interface ModelRegistryDeps {
  * 返回模型数组
  */
 export async function syncModels(deps: ModelRegistryDeps, signal?: AbortSignal): Promise<string[]> {
-  const cfg = getEffectiveConfig();
   const { httpClient, logger } = deps;
   try {
     const models = await httpClient.getModels(signal);

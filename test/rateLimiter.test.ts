@@ -30,17 +30,17 @@ describe('rateLimiter.TokenBucketPool', () => {
     rl.dispose();
   });
 
-  it('应按令牌桶进行节流（每分钟上限）', async function () {
-    this.timeout(5000);
+  it('应在初始令牌耗尽后按令牌桶进行节流（每分钟上限）', async function () {
+    this.timeout(3000);
     const rl = new TokenBucketPool({
-      maxConcurrency: 10,
-      maxPerMinute: 60, // 平均每秒 1 个
+      maxConcurrency: 200,
+      maxPerMinute: 120, // 平均每秒 2 个，初始令牌容量为 120
     });
 
     const timestamps: number[] = [];
     const start = Date.now();
 
-    const tasks = Array.from({ length: 5 }).map((_, i) =>
+    const tasks = Array.from({ length: 122 }).map((_, i) =>
       rl.schedule(async () => {
         timestamps.push(Date.now());
         return i;
@@ -48,9 +48,9 @@ describe('rateLimiter.TokenBucketPool', () => {
     );
 
     await Promise.all(tasks);
-    // 5 次请求，理论至少需要 ~4 秒（首个立即，余下每秒 1 个，考虑初始令牌可能略快，这里放宽）
+    // 前 120 个请求可使用初始令牌立即启动；其余请求必须等待令牌补充。
     const elapsed = Date.now() - start;
-    expect(elapsed).to.be.greaterThan(2000);
+    expect(elapsed).to.be.greaterThan(300);
     rl.dispose();
   });
 
@@ -91,6 +91,10 @@ describe('rateLimiter.TokenBucketPool', () => {
     });
 
     const second = rl.schedule(async () => 'second');
+    const secondResult = second.then(
+      () => undefined,
+      (error) => error,
+    );
 
     // 立刻取消所有队列中的
     rl.cancelAll();
@@ -98,12 +102,8 @@ describe('rateLimiter.TokenBucketPool', () => {
     const firstRes = await first;
     expect(firstRes).to.equal('first');
 
-    try {
-      await second;
-      throw new Error('second 应当被取消');
-    } catch (e: any) {
-      expect(String(e.message || e)).to.match(/aborted/i);
-    }
+    const error = await secondResult;
+    expect(String((error as Error | undefined)?.message || error)).to.match(/aborted/i);
 
     rl.dispose();
   });

@@ -57,27 +57,27 @@ export class Logger {
   }
 
   public error(message: string, err?: unknown) {
-    if (!this.shouldLog('error')) return;
+    if (!this.shouldLog('error')) {return;}
     this.channel.appendLine(this.fmt('error', message, err));
   }
 
   public warn(message: string, details?: unknown) {
-    if (!this.shouldLog('warn')) return;
+    if (!this.shouldLog('warn')) {return;}
     this.channel.appendLine(this.fmt('warn', message, details));
   }
 
   public info(message: string, details?: unknown) {
-    if (!this.shouldLog('info')) return;
+    if (!this.shouldLog('info')) {return;}
     this.channel.appendLine(this.fmt('info', message, details));
   }
 
   public debug(message: string, details?: unknown) {
-    if (!this.shouldLog('debug')) return;
+    if (!this.shouldLog('debug')) {return;}
     this.channel.appendLine(this.fmt('debug', message, details));
   }
 
   public trace(message: string, details?: unknown) {
-    if (!this.shouldLog('trace')) return;
+    if (!this.shouldLog('trace')) {return;}
     this.channel.appendLine(this.fmt('trace', message, details));
   }
 
@@ -86,7 +86,7 @@ export class Logger {
     try {
       body();
     } finally {
-      this.channel.appendLine(`── end ──`);
+      this.channel.appendLine('── end ──');
     }
   }
 }

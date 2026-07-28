@@ -1,4 +1,5 @@
-import { fetch, Headers, RequestInit, Pool, ProxyAgent, type Dispatcher } from 'undici';
+import type { RequestInit} from 'undici';
+import { fetch, Headers, Pool, ProxyAgent, type Dispatcher } from 'undici';
 import { exponentialJitter } from './backoff';
 import type { LogLevel } from '../log/logger';
 
@@ -66,7 +67,6 @@ export class HttpClient {
   }
 
   public updateOptions(next: Partial<HttpClientOptions>) {
-    const prev = this.opts;
     this.opts = { ...this.opts, ...(next as HttpClientOptions) };
     const newOrigin = normalizeOrigin(this.opts.baseUrl);
     const needRebuild =
@@ -274,7 +274,7 @@ export class HttpClient {
       while ((idx = buffer.indexOf('\n')) >= 0) {
         const line = buffer.slice(0, idx).trimEnd();
         buffer = buffer.slice(idx + 1);
-        if (!line) continue;
+        if (!line) {continue;}
         if (line.startsWith('data:')) {
           const data = line.slice(5).trim();
           if (data === '[DONE]') {
@@ -298,7 +298,7 @@ export class HttpClient {
           }
         }
       }
-      if (completed) break;
+      if (completed) {break;}
     }
 
     // 处理 buffer 中可能残留的最后一行数据（未以换行符结尾的情况）
@@ -362,7 +362,7 @@ export class HttpClient {
       const res = await fetch(url, mergedInit);
       return res as unknown as Response;
     } finally {
-      if (timeoutId) clearTimeout(timeoutId);
+      if (timeoutId) {clearTimeout(timeoutId);}
       if (externalSignal) {
         externalSignal.removeEventListener('abort', onAbort);
       }
@@ -418,7 +418,7 @@ export class HttpClient {
 
   private log(level: LogLevel, msg: string, details?: unknown) {
     try {
-      if (!this.opts.logger) return;
+      if (!this.opts.logger) {return;}
       this.opts.logger[level](msg, details);
     } catch {
       // ignore
@@ -428,10 +428,10 @@ export class HttpClient {
 
 /** 根据配置选择 body 模式 */
 function decideBodyMode(mode: 'auto' | 'chat' | 'completions', requestPath: string): 'chat' | 'completions' {
-  if (mode === 'chat' || mode === 'completions') return mode;
+  if (mode === 'chat' || mode === 'completions') {return mode;}
   const p = (requestPath || '').toLowerCase();
-  if (p.includes('/chat/completions')) return 'chat';
-  if (p.includes('/completions')) return 'completions';
+  if (p.includes('/chat/completions')) {return 'chat';}
+  if (p.includes('/completions')) {return 'completions';}
   return 'chat';
 }
 
@@ -485,12 +485,12 @@ function buildOpenAIStyleBody(input: {
 }
 
 function joinMessagesToPrompt(messages?: Array<{ role: string; content: string }>): string | undefined {
-  if (!messages || messages.length === 0) return undefined;
+  if (!messages || messages.length === 0) {return undefined;}
   return messages.map(m => `[${m.role}]\n${m.content}`).join('\n\n');
 }
 
 function extractTextFromOpenAIResponse(json: any): { text: string; reasoning?: string } {
-  if (!json) return { text: '' };
+  if (!json) {return { text: '' };}
 
   let text = '';
   let reasoning = '';
@@ -518,7 +518,7 @@ function extractTextFromOpenAIResponse(json: any): { text: string; reasoning?: s
   }
 
   // 兜底
-  if (typeof json === 'string') return { text: json };
+  if (typeof json === 'string') {return { text: json };}
   try {
     return { text: JSON.stringify(json) };
   } catch {
@@ -532,8 +532,8 @@ function extractDeltaFromSSE(json: any): { content: string; reasoning?: string }
   const res = { content: '', reasoning: '' };
 
   if (c?.delta) {
-    if (typeof c.delta.content === 'string') res.content = c.delta.content;
-    if (typeof c.delta.reasoning === 'string') res.reasoning = c.delta.reasoning;
+    if (typeof c.delta.content === 'string') {res.content = c.delta.content;}
+    if (typeof c.delta.reasoning === 'string') {res.reasoning = c.delta.reasoning;}
   } else if (typeof c?.text === 'string') {
     res.content = c.text;
   } else if (typeof json?.data === 'string') {
@@ -548,7 +548,7 @@ function extractDeltaFromSSE(json: any): { content: string; reasoning?: string }
 
 function parseRetryAfterMs(res: Response): number | undefined {
   const rh = res.headers.get('retry-after');
-  if (!rh) return undefined;
+  if (!rh) {return undefined;}
   const asNum = Number(rh);
   if (Number.isFinite(asNum)) {
     // 秒
@@ -574,7 +574,7 @@ function parseLimitPerMinute(res: Response): number | undefined {
   ];
   for (const k of keys) {
     const v = res.headers.get(k);
-    if (!v) continue;
+    if (!v) {continue;}
     const n = Number(v);
     if (Number.isFinite(n) && n > 0) {
       return Math.floor(n);
@@ -600,7 +600,7 @@ function normalizeOrigin(baseUrl: string): string {
 }
 
 function isAbortError(err: any): boolean {
-  if (!err) return false;
+  if (!err) {return false;}
   return err.name === 'AbortError' || /abort/i.test(err.message || '');
 }
 
@@ -613,7 +613,7 @@ async function safeReadText(res: Response): Promise<string> {
 }
 
 async function sleep(ms: number, signal?: AbortSignal): Promise<void> {
-  if (ms <= 0) return;
+  if (ms <= 0) {return;}
   await new Promise<void>((resolve, reject) => {
     const t = setTimeout(() => {
       cleanup();
@@ -625,7 +625,7 @@ async function sleep(ms: number, signal?: AbortSignal): Promise<void> {
     };
     const cleanup = () => {
       clearTimeout(t);
-      if (signal) signal.removeEventListener('abort', onAbort);
+      if (signal) {signal.removeEventListener('abort', onAbort);}
     };
     if (signal) {
       if (signal.aborted) {
@@ -647,6 +647,6 @@ function createHttpError(message: string, status: number, body?: string): Error 
 }
 
 function truncate(s: string, max: number): string {
-  if (!s) return '';
+  if (!s) {return '';}
   return s.length > max ? s.slice(0, max) + '…' : s;
 }

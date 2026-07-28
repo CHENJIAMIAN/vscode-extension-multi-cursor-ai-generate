@@ -46,16 +46,16 @@ export async function promiseWithTimeout<T>(p: Promise<T>, timeoutMs: number, si
       (v) => {
         if (!settled) {
           settled = true;
-          if (t) clearTimeout(t);
-          if (signal) signal.removeEventListener('abort', onAbort);
+          if (t) {clearTimeout(t);}
+          if (signal) {signal.removeEventListener('abort', onAbort);}
           resolve(v);
         }
       },
       (e) => {
         if (!settled) {
           settled = true;
-          if (t) clearTimeout(t);
-          if (signal) signal.removeEventListener('abort', onAbort);
+          if (t) {clearTimeout(t);}
+          if (signal) {signal.removeEventListener('abort', onAbort);}
           reject(e);
         }
       }
