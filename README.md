@@ -2,6 +2,13 @@
 
 # Multi Cursor AI Generate
 
+<!-- codex-github-rules:bilingual-summary -->
+> **中文简介**：对 VS Code 多光标或多选区并发调用 OpenAI 风格端点生成文本
+
+> **English summary**: Generate text for multiple VS Code cursors or selections concurrently through OpenAI-style endpoints
+
+---
+
 Concurrent text generation and insertion in VS Code for multi-cursor/multi-selection using OpenAI-style endpoints. Supports rate limiting and concurrency control, exponential backoff retries, SSE streaming insertion, cancellation, status bar throughput display, log panel, SecretStorage API Key management, default environment variable reading, model list synchronization, etc.
 
 - Extension Entry: [src/extension.activate()](src/extension.ts)
